@@ -1,11 +1,14 @@
 package com.example.myapplication
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.datetime.*
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
-class HomeViewModel : ViewModel() {
+open class HomeViewModel : ViewModel() {
 
     // Current date stored as a string (e.g., "Mon 14")
     private val _currentDate = MutableStateFlow(getTodayString())
@@ -37,6 +40,30 @@ class HomeViewModel : ViewModel() {
                 time = "9:00 PM",
                 instructions = "Before bed",
                 taken = true
+            ),
+            MedicationReminder(
+                id = 4,
+                name = "Vitamin D3",
+                dosage = "2000 IU",
+                time = "7:30 AM",
+                instructions = "Take with a full glass of water",
+                taken = false
+            ),
+            MedicationReminder(
+                id = 5,
+                name = "Ibuprofen",
+                dosage = "400mg",
+                time = "2:00 PM",
+                instructions = "Take after a meal if needed for pain",
+                taken = false
+            ),
+            MedicationReminder(
+                id = 6,
+                name = "Tylenol",
+                dosage = "200mg",
+                time = "1:00 PM",
+                instructions = "Take after a meal if needed for pain",
+                taken = false
             )
         )
     )
