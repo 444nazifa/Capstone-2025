@@ -11,56 +11,73 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.theme.CareCapsuleTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
+    CareCapsuleTheme {
+        var currentScreen by remember { mutableStateOf("login") }  // 🔹 Track whether we're on login or main
         val viewModel = remember { HomeViewModel() }
-        var selectedTab by remember { mutableStateOf("home") }
 
         Surface(color = MaterialTheme.colorScheme.background) {
-            Scaffold(
-                bottomBar = {
-                    NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        tonalElevation = 8.dp
-                    ) {
-                        NavigationBarItem(
-                            selected = selectedTab == "home",
-                            onClick = { selectedTab = "home" },
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                            label = { Text("Home") }
-                        )
-                        NavigationBarItem(
-                            selected = selectedTab == "medications",
-                            onClick = { selectedTab = "medications" },
-                            icon = { Icon(Icons.Default.MedicalServices, contentDescription = "Medications") },
-                            label = { Text("Medications") }
-                        )
-                        NavigationBarItem(
-                            selected = selectedTab == "scan",
-                            onClick = { selectedTab = "scan" },
-                            icon = { Icon(Icons.Default.CameraAlt, contentDescription = "Scan") },
-                            label = { Text("Scan") }
-                        )
-                        NavigationBarItem(
-                            selected = selectedTab == "profile",
-                            onClick = { selectedTab = "profile" },
-                            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                            label = { Text("Profile") }
-                        )
-                    }
-                }
-            ) { innerPadding ->
-                when (selectedTab) {
-                    "home" -> HomeScreen(viewModel)
-                    "medications" -> MedicationsScreen(Modifier.padding(innerPadding))
-                    "scan" -> ScanScreen(Modifier.padding(innerPadding))
-                    "profile" -> ProfileScreen(Modifier.padding(innerPadding))
-                }
+            when (currentScreen) {
+
+                // 🔹 Login screen first
+                "login" -> LoginScreen(
+                    onLogin = { currentScreen = "main" } // switch to main after login
+                )
+
+                // 🔹 Main app (your bottom navigation)
+                "main" -> MainApp(viewModel)
             }
+        }
+    }
+}
+
+@Composable
+fun MainApp(viewModel: HomeViewModel) {
+    var selectedTab by remember { mutableStateOf("home") }
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 8.dp
+            ) {
+                NavigationBarItem(
+                    selected = selectedTab == "home",
+                    onClick = { selectedTab = "home" },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                    label = { Text("Home") }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == "medications",
+                    onClick = { selectedTab = "medications" },
+                    icon = { Icon(Icons.Default.MedicalServices, contentDescription = "Medications") },
+                    label = { Text("Medications") }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == "scan",
+                    onClick = { selectedTab = "scan" },
+                    icon = { Icon(Icons.Default.CameraAlt, contentDescription = "Scan") },
+                    label = { Text("Scan") }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == "profile",
+                    onClick = { selectedTab = "profile" },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                    label = { Text("Profile") }
+                )
+            }
+        }
+    ) { innerPadding ->
+        when (selectedTab) {
+            "home" -> HomeScreen(viewModel)
+            "medications" -> MedicationsScreen(Modifier.padding(innerPadding))
+            "scan" -> ScanScreen(Modifier.padding(innerPadding))
+            "profile" -> ProfileScreen(Modifier.padding(innerPadding))
         }
     }
 }
