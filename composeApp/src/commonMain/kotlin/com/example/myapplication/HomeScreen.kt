@@ -1,50 +1,41 @@
 package com.example.myapplication
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector // 👈 FIXED import
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.theme.CareCapsuleTheme
+import kotlinx.datetime.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
     val medications by viewModel.medications.collectAsState()
     val currentDate by viewModel.currentDate.collectAsState()
-    val weekDays = viewModel.getWeekDays()
+    val weekOffset by viewModel.weekOffset.collectAsState()
+    val weekDays by remember(currentDate) { mutableStateOf(viewModel.getWeekDays()) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
-            // ──────────────── Section 1: Header + Calendar (fixed) ────────────────
+            // ─────────────── Header + Calendar ───────────────
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -63,51 +54,70 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 Spacer(modifier = Modifier.height(20.dp))
 
                 WeeklyCalendarCardStyled(
+                    weekOffset = weekOffset,
                     currentDate = currentDate,
                     weekDays = weekDays,
                     isToday = viewModel::isToday,
-                    onNavigateWeek = viewModel::navigateWeek
+                    onNavigateWeek = viewModel::navigateWeek,
+                    viewModel = viewModel
                 )
             }
 
-            // ──────────────── Divider ────────────────
             HorizontalDivider(
                 modifier = Modifier.fillMaxWidth(),
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
             )
 
-            // ───────────── Scrollable “Today’s Medication” section ─────────────
+            // ─────────────── Today's Medication (scrollable) ───────────────
+            val scrollState = rememberScrollState()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 100.dp)
             ) {
-                val scrollState = rememberScrollState()
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp, vertical = 24.dp)
-                        .verticalScroll(rememberScrollState())
-                        .padding(bottom = 90.dp)
-                ) {
+                Column {
                     Text(
                         text = "Today's Medication",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                            fontSize = 25.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = 20.dp)
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    medications.forEach { medication ->
-                        MedicationItemStyled(
-                            medication = medication,
-                            onToggle = { viewModel.toggleMedication(medication.id) }
-                        )
+                    val upcomingMedications = medications.filter { !it.taken }
+                    val completedMedications = medications.filter { it.taken }
+
+                    // UPCOMING SECTION
+                    SectionHeader(
+                        icon = Icons.Default.ErrorOutline,
+                        iconColor = Color(0xFFD32F2F),
+                        label = "Upcoming (${upcomingMedications.size})"
+                    )
+
+                    upcomingMedications.forEach { med ->
+                        MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // COMPLETED SECTION
+                    SectionHeader(
+                        icon = Icons.Default.Check,
+                        iconColor = Color(0xFF388E3C),
+                        label = "Completed (${completedMedications.size})"
+                    )
+
+                    completedMedications.forEach { med ->
+                        MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
                         Spacer(modifier = Modifier.height(10.dp))
                     }
                 }
@@ -117,12 +127,43 @@ fun HomeScreen(viewModel: HomeViewModel) {
 }
 
 @Composable
+fun SectionHeader(icon: ImageVector, iconColor: Color, label: String) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = iconColor,
+                    modifier = Modifier.size(25.dp)
+                )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = label,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+
+
+@Composable
 fun WeeklyCalendarCardStyled(
+    weekOffset: Int,
     currentDate: String,
     weekDays: List<String>,
     isToday: (String) -> Boolean,
-    onNavigateWeek: (Int) -> Unit
+    onNavigateWeek: (Int) -> Unit,
+    viewModel: HomeViewModel
 ) {
+    val baseDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val offsetDate = baseDate.plus(weekOffset * 7, DateTimeUnit.DAY)
+    val monthName = offsetDate.month.name.lowercase().replaceFirstChar { it.uppercase() }
+    val year = offsetDate.year
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -130,33 +171,29 @@ fun WeeklyCalendarCardStyled(
         colors = CardDefaults.cardColors(containerColor = Color(0xFFEDEAF1)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 25.dp)
-        ) {
-            // Month header
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)) {
+            // Month header with arrows
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Oct 2025", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("$monthName $year", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Previous week",
                         modifier = Modifier
                             .size(22.dp)
-                            .clickable { onNavigateWeek(-1) }, // 👈 go back a week
+                            .clickable { onNavigateWeek(-1) },
                         tint = Color(0xFF555555)
                     )
-
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
                         contentDescription = "Next week",
                         modifier = Modifier
                             .size(22.dp)
-                            .clickable { onNavigateWeek(1) }, // 👈 go forward a week
+                            .clickable { onNavigateWeek(1) },
                         tint = Color(0xFF555555)
                     )
                 }
@@ -164,17 +201,25 @@ fun WeeklyCalendarCardStyled(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Week row
+            // Week row with dots
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 weekDays.forEach { day ->
+                    val dateNumber = day.takeLast(2).trim().toIntOrNull() ?: 1
+                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    val startOfWeek = today.minus(today.dayOfWeek.ordinal.toLong(), DateTimeUnit.DAY)
+                    val dateForThisDay =
+                        startOfWeek.plus(dateNumber - startOfWeek.dayOfMonth, DateTimeUnit.DAY)
+
+                    val medsForDay = viewModel.getMedicationsForDay(dateForThisDay)
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .width(40.dp)
-                            .padding(vertical = 15.dp)
+                            .padding(vertical = 10.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(
                                 if (isToday(day)) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -182,17 +227,32 @@ fun WeeklyCalendarCardStyled(
                             .padding(vertical = 6.dp, horizontal = 4.dp)
                     ) {
                         Text(
-                            text = day.take(2), // Su, Mo, Tu...
+                            text = day.take(2),
                             fontWeight = FontWeight.Medium,
                             fontSize = 12.sp,
                             color = if (isToday(day)) Color.White else Color.Black
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = day.takeLast(2), // number part
+                            text = day.takeLast(2),
                             fontSize = 14.sp,
                             color = if (isToday(day)) Color.White else Color.Black
                         )
+
+                        // Medication dots
+                        Row(
+                            modifier = Modifier.padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            medsForDay.take(3).forEach { med ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .padding(horizontal = 1.dp)
+                                        .background(color = med.color, shape = CircleShape)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -201,10 +261,9 @@ fun WeeklyCalendarCardStyled(
 }
 
 @Composable
-fun MedicationItemStyled(
-    medication: MedicationReminder,
-    onToggle: () -> Unit
-) {
+fun MedicationItemStyled(medication: MedicationReminder, onToggle: () -> Unit) {
+    val containerAlpha = if (medication.taken) 0.5f else 1f
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -214,53 +273,45 @@ fun MedicationItemStyled(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .alpha(containerAlpha),
             verticalAlignment = Alignment.Top
         ) {
-            // ✅ Checkbox
             Checkbox(
                 checked = medication.taken,
                 onCheckedChange = { onToggle() },
                 modifier = Modifier
-                    .offset(y = (3).dp)       // lift slightly to align with text
-                    .padding(start = 0.dp, end = 0.dp) // 👈 remove extra space
-                    .size(16.dp),              // optional: slightly smaller checkbox
+                    .offset(y = (3).dp)
+                    .size(18.dp),
                 colors = CheckboxDefaults.colors(
                     checkedColor = MaterialTheme.colorScheme.primary,
                     uncheckedColor = Color.Gray
                 )
             )
 
-
             Spacer(modifier = Modifier.width(8.dp))
 
-            // ✅ Medication info
-            Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = medication.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.Black
+                    color = Color.Black,
+                    textDecoration = if (medication.taken) TextDecoration.LineThrough else null
                 )
                 Text(
                     text = medication.dosage,
                     color = Color(0xFF555555),
                     fontSize = 13.sp
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = "Time",
                         tint = Color(0xFF777777),
-                        modifier = Modifier
-                            .size(14.dp)
-                            .padding(end = 4.dp)
+                        modifier = Modifier.size(14.dp)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = medication.time,
                         color = Color(0xFF777777),
@@ -268,23 +319,22 @@ fun MedicationItemStyled(
                     )
                 }
                 medication.instructions?.let {
-                    Text(
-                        text = it,
-                        color = Color(0xFF777777),
-                        fontSize = 12.sp
-                    )
+                    Text(text = it, color = Color(0xFF777777), fontSize = 12.sp)
                 }
+                Text(
+                    text = "Frequency: ${medication.frequency}",
+                    color = Color(0xFF777777),
+                    fontSize = 12.sp
+                )
             }
         }
     }
 }
 
-
 @Preview
 @Composable
 fun HomeScreenPreview() {
     CareCapsuleTheme {
-        val fakeViewModel = HomeViewModel()
-        HomeScreen(viewModel = fakeViewModel)
+        HomeScreen(HomeViewModel())
     }
 }
