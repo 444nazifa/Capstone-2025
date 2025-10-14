@@ -10,8 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.*
 
 @Composable
 fun WeeklyCalendarCard(
@@ -20,57 +19,41 @@ fun WeeklyCalendarCard(
     isToday: (LocalDate) -> Boolean,
     onNavigateWeek: (Boolean) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Header with month/year and navigation
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            val header = weekDays.first()
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${getMonthName(currentDate.monthNumber)} ${currentDate.year}",
+                    text = "${getMonthName(header.monthNumber)} ${header.year}", // ✅ CHANGED
                     style = MaterialTheme.typography.titleMedium
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    IconButton(
-                        onClick = { onNavigateWeek(false) },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Text(
-                            text = "←",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                    IconButton(onClick = { onNavigateWeek(false) }, modifier = Modifier.size(32.dp)) {
+                        Text("←", style = MaterialTheme.typography.titleMedium)
                     }
-
-                    IconButton(
-                        onClick = { onNavigateWeek(true) },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Text(
-                            text = "→",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                    IconButton(onClick = { onNavigateWeek(true) }, modifier = Modifier.size(32.dp)) {
+                        Text("→", style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Week days grid
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                weekDays.forEachIndexed { index, date ->
+                weekDays.forEach { date ->
                     WeekDayItem(
                         date = date,
-                        dayName = getDayName(index),
+                        dayName = dayAbbrevFor(date),
                         isToday = isToday(date),
                         modifier = Modifier.weight(1f)
                     )
@@ -122,7 +105,6 @@ fun WeekDayItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Medication indicators (sample dots)
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -147,33 +129,37 @@ fun WeekDayItem(
     }
 }
 
-private fun getDayName(index: Int): String {
-    return when (index) {
-        0 -> "Sun"
-        1 -> "Mon"
-        2 -> "Tue"
-        3 -> "Wed"
-        4 -> "Thu"
-        5 -> "Fri"
-        6 -> "Sat"
-        else -> ""
-    }
+// UPDATE: Generates a Sunday-starting week (prevents 1-day delay)
+fun weekStartingSunday(anchor: LocalDate): List<LocalDate> {
+    val daysFromSunday = (anchor.dayOfWeek.ordinal + 1) % 7 // ✅ CHANGED
+    val start = anchor.minus(daysFromSunday, DateTimeUnit.DAY)
+    return (0..6).map { start.plus(it, DateTimeUnit.DAY) }
 }
 
-private fun getMonthName(month: Int): String {
-    return when (month) {
-        1 -> "Jan"
-        2 -> "Feb"
-        3 -> "Mar"
-        4 -> "Apr"
-        5 -> "May"
-        6 -> "Jun"
-        7 -> "Jul"
-        8 -> "Aug"
-        9 -> "Sep"
-        10 -> "Oct"
-        11 -> "Nov"
-        12 -> "Dec"
-        else -> ""
-    }
+// UPDATE: Derive day name directly from the actual date (not index)
+private fun dayAbbrevFor(date: LocalDate): String = when (date.dayOfWeek) {
+    DayOfWeek.MONDAY -> "Mon"
+    DayOfWeek.TUESDAY -> "Tue"
+    DayOfWeek.WEDNESDAY -> "Wed"
+    DayOfWeek.THURSDAY -> "Thu"
+    DayOfWeek.FRIDAY -> "Fri"
+    DayOfWeek.SATURDAY -> "Sat"
+    DayOfWeek.SUNDAY -> "Sun"
+    else -> ""
+}
+
+private fun getMonthName(month: Int): String = when (month) {
+    1 -> "Jan"
+    2 -> "Feb"
+    3 -> "Mar"
+    4 -> "Apr"
+    5 -> "May"
+    6 -> "Jun"
+    7 -> "Jul"
+    8 -> "Aug"
+    9 -> "Sep"
+    10 -> "Oct"
+    11 -> "Nov"
+    12 -> "Dec"
+    else -> ""
 }
