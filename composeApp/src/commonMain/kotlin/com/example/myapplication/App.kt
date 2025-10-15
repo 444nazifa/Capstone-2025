@@ -75,9 +75,9 @@ fun MainApp(viewModel: HomeViewModel) {
     ) { innerPadding ->
         when (selectedTab) {
             "home" -> HomeScreen(viewModel)
-            "medications" -> MedicationsScreen(Modifier.padding(innerPadding))
-            "scan" -> ScanScreen(Modifier.padding(innerPadding))
-            "profile" -> ProfileScreen(Modifier.padding(innerPadding))
+            "medications" -> MedicationScreen(modifier = Modifier.padding(innerPadding))
+            "scan" -> ScanScreen(modifier = Modifier.padding(innerPadding))
+            "profile" -> ProfileScreen(modifier = Modifier.padding(innerPadding))
         }
     }
 }

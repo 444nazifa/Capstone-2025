@@ -40,7 +40,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-                    .padding(top = 48.dp, bottom = 16.dp)
+                    .padding(top = 55.dp, bottom = 16.dp)
             ) {
                 Text(
                     text = "My Prescriptions",
@@ -77,7 +77,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                     .weight(1f)
                     .verticalScroll(scrollState)
                     .padding(horizontal = 20.dp)
-                    .padding(bottom = 100.dp)
+                    .padding(bottom = 120.dp)
             ) {
                 Column {
                     Text(
