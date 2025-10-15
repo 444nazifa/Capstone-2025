@@ -111,7 +111,7 @@ fun ScanScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
+fun ProfilesScreen(modifier: Modifier = Modifier) {
     Surface(modifier = modifier.fillMaxSize()) {
         Text("Profile Page", modifier = Modifier.padding(32.dp))
     }
