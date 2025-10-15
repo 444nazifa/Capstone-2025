@@ -45,8 +45,17 @@ def decode_base64_image(base64_string):
 def read_qr_from_image_array(image_array):
     try:
         reader = PrescriptionQRReader()
+        # First try QR detection
         qr_data = reader.enhanced_qr_detection(image_array)
-        return qr_data
+        if qr_data:
+            return qr_data
+
+        # Fallback to NDC detection if no QR code found
+        ndc_number = reader.detect_ndc_from_text(image_array)
+        if ndc_number:
+            return f"NDC: {ndc_number}"
+
+        return None
     except Exception as e:
         logger.error(f"Error reading QR code: {e}")
         return None
@@ -169,7 +178,7 @@ def internal_error(e):
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 3002))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
 
     print(f"Starting Prescription QR Code Reader API on port {port}")
