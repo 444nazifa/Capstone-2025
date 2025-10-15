@@ -29,6 +29,13 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            // CameraX dependencies
+            implementation("androidx.camera:camera-core:1.3.3")
+            implementation("androidx.camera:camera-camera2:1.3.3")
+            implementation("androidx.camera:camera-lifecycle:1.3.3")
+            implementation("androidx.camera:camera-view:1.3.3")
+            // OkHttp for networking
+            implementation("com.squareup.okhttp3:okhttp:4.12.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -42,6 +49,14 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             implementation(compose.materialIconsExtended)
+            // Ktor core dependencies
+            implementation("io.ktor:ktor-client-core:2.3.7")
+            implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
+        }
+        iosMain.dependencies {
+            // Ktor iOS engine
+            implementation("io.ktor:ktor-client-darwin:2.3.7")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
