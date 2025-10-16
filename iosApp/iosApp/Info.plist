@@ -4,5 +4,13 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+    <!-- Camera Permission -->
+    <key>NSCameraUsageDescription</key>
+    <string>We need access to your camera to scan medication barcodes and QR codes.</string>
+
+    <!-- If you want to save photos -->
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>We need permission to save scanned medication images.</string>
+
 </dict>
 </plist>
