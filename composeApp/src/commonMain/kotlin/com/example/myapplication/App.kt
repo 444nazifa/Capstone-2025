@@ -13,13 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.theme.CareCapsuleTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-@Preview
 fun App() {
     CareCapsuleTheme {
         var currentScreen by remember { mutableStateOf("login") }  // 🔹 Track whether we're on login or main
-        val viewModel = remember { HomeViewModel() }
+        val homeViewModel = remember { HomeViewModel() }
+        val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
@@ -30,14 +31,20 @@ fun App() {
                 )
 
                 // 🔹 Main app (your bottom navigation)
-                "main" -> MainApp(viewModel)
+                "main" -> MainApp(
+                    homeViewModel = homeViewModel,
+                    scanMedicationViewModel = scanMedicationViewModel
+                )
             }
         }
     }
 }
 
 @Composable
-fun MainApp(viewModel: HomeViewModel) {
+fun MainApp(
+    homeViewModel: HomeViewModel,
+    scanMedicationViewModel: ScanMedicationViewModel
+) {
     var selectedTab by remember { mutableStateOf("home") }
 
     Scaffold(
@@ -74,9 +81,16 @@ fun MainApp(viewModel: HomeViewModel) {
         }
     ) { innerPadding ->
         when (selectedTab) {
-            "home" -> HomeScreen(viewModel)
+            "home" -> HomeScreen(homeViewModel)
             "medications" -> MedicationScreen(modifier = Modifier.padding(innerPadding))
-            "scan" -> ScanScreen(modifier = Modifier.padding(innerPadding))
+            "scan" ->    ScanMedicationScreen(
+                viewModel = scanMedicationViewModel,
+                showBackButton = false, // ← No back button
+                onBarcodeScanned = { barcode ->
+                    // print the scanned barcode
+                    println("Scanned barcode: $barcode")
+                }
+            )
             "profile" -> ProfileScreen(modifier = Modifier.padding(innerPadding))
         }
     }
@@ -101,4 +115,11 @@ fun ProfilesScreen(modifier: Modifier = Modifier) {
     Surface(modifier = modifier.fillMaxSize()) {
         Text("Profile Page", modifier = Modifier.padding(32.dp))
     }
+}
+
+
+@Preview
+@Composable
+fun AppPreview() {
+    App()
 }
