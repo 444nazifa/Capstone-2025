@@ -25,12 +25,20 @@ fun App() {
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
 
-                // 🔹 Login screen first
+                // Login screen first
                 "login" -> LoginScreen(
-                    onLogin = { currentScreen = "main" } // switch to main after login
+                    onLogin = { currentScreen = "main" }, // switch to main after login
+                    onForgotPassword = { /* later feature */ },
+                    onCreateAccount = { currentScreen = "createAccount" } // Go to Create Account
                 )
 
-                // 🔹 Main app (your bottom navigation)
+                // Create Account Screen
+                "createAccount" -> CreateAccountScreen(
+                    onSignUp = { currentScreen = "main" },
+                    onLoginClick = { currentScreen = "login" }
+                )
+
+                // Main app (your bottom navigation)
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
                     scanMedicationViewModel = scanMedicationViewModel

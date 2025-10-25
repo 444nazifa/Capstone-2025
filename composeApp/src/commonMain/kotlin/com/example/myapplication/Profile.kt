@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.*
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // Simple profile model for this screen
 data class UserProfile(
@@ -413,4 +414,10 @@ private fun isReasonableDob(dob: LocalDate): Boolean {
         (today.monthNumber == dob.monthNumber && today.dayOfMonth < dob.dayOfMonth)
     ) 1 else 0
     return years in 0..120
+}
+
+@Preview
+@Composable
+fun ProfileScreenPreview() {
+    ProfileScreen()
 }
