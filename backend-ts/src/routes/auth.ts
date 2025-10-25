@@ -85,7 +85,7 @@ router.post('/register', async (req: Request<{}, AuthResponse | ErrorResponse, R
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'User registered successfully',
       user: {
@@ -99,7 +99,7 @@ router.post('/register', async (req: Request<{}, AuthResponse | ErrorResponse, R
 
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
@@ -151,7 +151,7 @@ router.post('/login', async (req: Request<{}, AuthResponse | ErrorResponse, Logi
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
     );
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Login successful',
       user: {
@@ -165,7 +165,7 @@ router.post('/login', async (req: Request<{}, AuthResponse | ErrorResponse, Logi
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });

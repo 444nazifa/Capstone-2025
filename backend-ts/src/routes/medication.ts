@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { DailyMedClient } from './dailymed-client';
-import { SearchParams, NDCSearchParams, AutocompleteParams } from './types';
+import { DailyMedProvider } from '../providers/dailymed.provider';
+import { SearchParams, NDCSearchParams, AutocompleteParams } from '../types/medication';
 
 const router = Router();
-const dailyMedClient = new DailyMedClient();
+const dailyMedProvider = new DailyMedProvider();
 
-router.get('/search/medication', async (req: Request, res: Response) => {
+router.get('/search', async (req: Request, res: Response) => {
   try {
     const { query, limit, offset } = req.query;
 
@@ -22,15 +22,15 @@ router.get('/search/medication', async (req: Request, res: Response) => {
       offset: offset ? parseInt(offset as string) : undefined
     };
 
-    const result = await dailyMedClient.searchByMedicationName(searchParams);
+    const result = await dailyMedProvider.searchByMedicationName(searchParams);
     
     if (result.success) {
-      res.json(result);
+      return res.json(result);
     } else {
-      res.status(500).json(result);
+      return res.status(500).json(result);
     }
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error'
     });
@@ -49,22 +49,22 @@ router.get('/search/ndc', async (req: Request, res: Response) => {
     }
 
     const searchParams: NDCSearchParams = { ndc };
-    const result = await dailyMedClient.searchByNDC(searchParams);
+    const result = await dailyMedProvider.searchByNDC(searchParams);
     
     if (result.success) {
-      res.json(result);
+      return res.json(result);
     } else {
-      res.status(500).json(result);
+      return res.status(500).json(result);
     }
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error'
     });
   }
 });
 
-router.get('/medication/:setId', async (req: Request, res: Response) => {
+router.get('/details/:setId', async (req: Request, res: Response) => {
   try {
     const { setId } = req.params;
 
@@ -75,15 +75,15 @@ router.get('/medication/:setId', async (req: Request, res: Response) => {
       });
     }
 
-    const result = await dailyMedClient.getMedicationDetails(setId);
+    const result = await dailyMedProvider.getMedicationDetails(setId);
     
     if (result.success) {
-      res.json(result);
+      return res.json(result);
     } else {
-      res.status(500).json(result);
+      return res.status(500).json(result);
     }
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error'
     });
@@ -106,15 +106,15 @@ router.get('/autocomplete', async (req: Request, res: Response) => {
       limit: limit ? parseInt(limit as string) : undefined
     };
 
-    const result = await dailyMedClient.autocomplete(autocompleteParams);
+    const result = await dailyMedProvider.autocomplete(autocompleteParams);
     
     if (result.success) {
-      res.json(result);
+      return res.json(result);
     } else {
-      res.status(500).json(result);
+      return res.status(500).json(result);
     }
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error'
     });

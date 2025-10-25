@@ -6,6 +6,7 @@ A TypeScript backend API for the QR code reader application with Supabase authen
 
 - User registration and login
 - JWT-based authentication
+- Medication database search via DailyMed API
 - Input validation with Joi
 - Rate limiting and security middleware
 - TypeScript for type safety
@@ -122,3 +123,70 @@ Check if the server is running.
 - At least one lowercase letter
 - At least one number
 - At least one special character (@$!%*?&)
+
+### Medication Search
+
+#### GET /api/medication/search
+Search for medications by name.
+
+**Query parameters:**
+- `query` (required): Medication name to search for
+- `limit` (optional): Number of results to return (default: 20)
+- `offset` (optional): Number of results to skip (default: 0)
+
+**Example:**
+```
+GET /api/medication/search?query=aspirin&limit=5
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "setId": "23b29044-6389-42ea-839a-5351557a6ce3",
+      "title": "ASPIRIN 81 MG LOW DOSE (ASPIRIN) TABLET, DELAYED RELEASE [CVS WOONSOCKET PRESCRIPTION CENTER, INCORPORATED]",
+      "ndc": [],
+      "labeler": "Unknown",
+      "published": "2024-01-15",
+      "updated": "2024-01-15"
+    }
+  ],
+  "total": 100
+}
+```
+
+#### GET /api/medication/search/ndc
+Search for medications by NDC number.
+
+**Query parameters:**
+- `ndc` (required): NDC number to search for
+
+**Example:**
+```
+GET /api/medication/search/ndc?ndc=12345-678-90
+```
+
+#### GET /api/medication/details/:setId
+Get detailed information about a specific medication.
+
+**Parameters:**
+- `setId` (required): The medication set ID
+
+**Example:**
+```
+GET /api/medication/details/23b29044-6389-42ea-839a-5351557a6ce3
+```
+
+#### GET /api/medication/autocomplete
+Get autocomplete suggestions for medication names.
+
+**Query parameters:**
+- `term` (required): Partial medication name
+- `limit` (optional): Number of suggestions to return (default: 10)
+
+**Example:**
+```
+GET /api/medication/autocomplete?term=asp&limit=5
+```
