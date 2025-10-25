@@ -1,5 +1,8 @@
 package com.example.myapplication
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,6 +33,12 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    // Validation (same approach as Create Account)
+    val emailOk = remember(email) { email.isBlank() || isValidEmail(email) }
+    val passwordOk = remember(password) { password.isBlank() || password.length >= 6 }
+
+    val formValid = email.isNotBlank() && emailOk && passwordOk && password.isNotBlank()
 
     // 🔹 Use Box to layer background + content
     Box(
@@ -106,6 +115,7 @@ fun LoginScreen(
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                                 keyboardType = KeyboardType.Email
                             ),
+                            isError = email.isNotBlank() && !emailOk,
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color.Transparent,
@@ -114,6 +124,18 @@ fun LoginScreen(
                                 unfocusedContainerColor = Color.White
                             )
                         )
+                        AnimatedVisibility(
+                            visible = email.isNotBlank() && !emailOk,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Text(
+                                "Enter a valid email, e.g. name@example.com",
+                                color = Color(0xFFD32F2F),
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -133,6 +155,7 @@ fun LoginScreen(
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                                 keyboardType = KeyboardType.Password
                             ),
+                            isError = password.isNotBlank() && !passwordOk,
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color.Transparent,
@@ -141,17 +164,33 @@ fun LoginScreen(
                                 unfocusedContainerColor = Color.White
                             )
                         )
+                        AnimatedVisibility(
+                            visible = password.isNotBlank() && !passwordOk,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Text(
+                                "Password must be at least 6 characters",
+                                color = Color(0xFFD32F2F),
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(24.dp))
 
                         // SIGN IN BUTTON
                         Button(
                             onClick = onLogin,
+                            enabled = formValid,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
                             shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4CAF50),
+                                disabledContainerColor = Color(0xFFBDBDBD)
+                            )
                         ) {
                             Text("Sign In", color = Color.White, fontWeight = FontWeight.Bold)
                         }
@@ -191,6 +230,12 @@ fun LoginScreen(
             }
         }
     }
+}
+
+// --- helpers ---
+private fun isValidEmail(s: String): Boolean {
+    val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    return re.matches(s.trim())
 }
 
 @Preview
