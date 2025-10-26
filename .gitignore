@@ -1,3 +1,99 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Python virtual environments
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.env/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+
+# Python environment variables
+backend/.env
+backend/.env.local
+backend/.env.*.local
+
+# Node.js
+backend-ts/node_modules/
+backend-ts/.npm
+backend-ts/.eslintcache
+backend-ts/*.tgz
+backend-ts/*.tar.gz
+node_modules/
+
+# TypeScript
+backend-ts/dist/
+backend-ts/build/
+backend-ts/*.tsbuildinfo
+
+# Environment variables
+backend-ts/.env
+backend-ts/.env.local
+backend-ts/.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Kotlin Multiplatform Mobile / KMM
 *.iml
 .kotlin
 .gradle
@@ -5,8 +101,6 @@
 xcuserdata
 !src/**/build/
 local.properties
-.idea
-.DS_Store
 captures
 .externalNativeBuild
 .cxx
@@ -16,4 +110,85 @@ captures
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
-node_modules/
+
+# Frontend - Kotlin Multiplatform Mobile
+frontend/.gradle/
+frontend/build/
+frontend/local.properties
+frontend/.idea/
+frontend/*.iml
+frontend/*.iws
+frontend/*.ipr
+frontend/out/
+frontend/.DS_Store
+
+# Android specific
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/captures/
+frontend/android/.externalNativeBuild/
+frontend/android/.cxx/
+frontend/android/local.properties
+frontend/android/app/release/
+frontend/android/app/debug/
+frontend/android/keystore.properties
+frontend/android/*.apk
+frontend/android/*.aab
+
+# iOS specific
+frontend/ios/build/
+frontend/ios/Pods/
+frontend/ios/*.xcworkspace/xcuserdata/
+frontend/ios/*.xcodeproj/xcuserdata/
+frontend/ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+frontend/ios/DerivedData/
+frontend/ios/*.ipa
+frontend/ios/.xcode.env.local
+
+# Xcode
+frontend/ios/*.pbxuser
+frontend/ios/*.mode1v3
+frontend/ios/*.mode2v3
+frontend/ios/*.perspectivev3
+frontend/ios/*.xcuserstate
+frontend/ios/*.xcscmblueprint
+frontend/ios/*.hmap
+frontend/ios/*.ipa
+frontend/ios/*.dSYM.zip
+frontend/ios/*.dSYM
+
+# KMM Gradle
+frontend/gradle/wrapper/gradle-wrapper.properties
+frontend/.kotlin/
+
+# Temporary folders
+tmp/
+temp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# API keys and secrets (extra safety)
+**/secrets/
+**/.secrets/
+**/config/secrets.*
+
+# Test files
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+.coverage.*
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Backup files
+*.bak
+*.backup
+*.old

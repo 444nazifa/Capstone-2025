@@ -1,0 +1,9 @@
+opencv-python-headless
+numpy
+qrcode[pil]
+flask
+pillow
+pytesseract
+# pyzbar - Commented out because it requires zbar system library not available on Vercel
+# Uncomment for local development or platforms with system library support
+# pyzbar
