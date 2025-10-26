@@ -2,8 +2,6 @@
 
 import cv2
 import numpy as np
-from pyzbar import pyzbar
-from pyzbar.pyzbar import ZBarSymbol
 import json
 import re
 from datetime import datetime
@@ -12,12 +10,29 @@ import argparse
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError
+
+# Make pyzbar optional since it requires zbar system library
+try:
+    from pyzbar import pyzbar
+    from pyzbar.pyzbar import ZBarSymbol
+    PYZBAR_AVAILABLE = True
+except (ImportError, OSError) as e:
+    PYZBAR_AVAILABLE = False
+    print(
+        f"Warning: pyzbar not available ({e}). QR code detection will be limited.")
+
 try:
     import pytesseract
-    TESSERACT_AVAILABLE = True
+    # Try to verify tesseract binary is available
+    try:
+        pytesseract.get_tesseract_version()
+        TESSERACT_AVAILABLE = True
+    except (OSError, RuntimeError):
+        TESSERACT_AVAILABLE = False
+        print("Warning: pytesseract installed but tesseract binary not found. Text detection will be disabled.")
 except ImportError:
     TESSERACT_AVAILABLE = False
-    print("Warning: pytesseract not available. NDC detection from text will be disabled.")
+    print("Warning: pytesseract not installed. Text detection will be disabled.")
 
 
 class PrescriptionQRReader:
@@ -99,48 +114,98 @@ class PrescriptionQRReader:
 
         return None
 
-    def enhanced_qr_detection(self, image: np.ndarray) -> Optional[str]:
-        decoded_objects = pyzbar.decode(image, symbols=[ZBarSymbol.QRCODE])
-        if decoded_objects:
-            return decoded_objects[0].data.decode('utf-8')
+    def opencv_qr_detection(self, image: np.ndarray) -> Optional[str]:
+        """
+        Fallback QR detection using OpenCV's built-in QRCodeDetector
+        This doesn't require pyzbar/zbar and works on all platforms
+        """
+        detector = cv2.QRCodeDetector()
 
+        # Try direct detection
+        data, bbox, straight_qrcode = detector.detectAndDecode(image)
+        if data:
+            return data
+
+        # Try with preprocessed images
         processed_images = self.preprocess_image_for_qr(image)
-
         for processed_img in processed_images:
-            decoded_objects = pyzbar.decode(
-                processed_img, symbols=[ZBarSymbol.QRCODE])
-            if decoded_objects:
-                return decoded_objects[0].data.decode('utf-8')
+            data, bbox, straight_qrcode = detector.detectAndDecode(
+                processed_img)
+            if data:
+                return data
 
-        # Strategy 3: Try to detect QR region using contours first
-        qr_region = self.detect_qr_with_contours(image)
-        if qr_region is not None:
-            # Try to decode the extracted region
-            decoded_objects = pyzbar.decode(
-                qr_region, symbols=[ZBarSymbol.QRCODE])
-            if decoded_objects:
-                return decoded_objects[0].data.decode('utf-8')
-
-            # If direct decoding fails, preprocess the region
-            processed_regions = self.preprocess_image_for_qr(qr_region)
-            for processed_region in processed_regions:
-                decoded_objects = pyzbar.decode(
-                    processed_region, symbols=[ZBarSymbol.QRCODE])
-                if decoded_objects:
-                    return decoded_objects[0].data.decode('utf-8')
-
+        # Try with different scales
         for scale in [0.5, 1.5, 2.0]:
             height, width = image.shape[:2]
             new_width = int(width * scale)
             new_height = int(height * scale)
 
-            if new_width > 50 and new_height > 50:  # Avoid too small images
+            if new_width > 50 and new_height > 50:
                 resized = cv2.resize(
                     image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+                data, bbox, straight_qrcode = detector.detectAndDecode(resized)
+                if data:
+                    return data
+
+        return None
+
+    def enhanced_qr_detection(self, image: np.ndarray) -> Optional[str]:
+        """
+        Enhanced QR detection with fallback strategies:
+        1. If pyzbar available: Try pyzbar first (more robust for challenging images)
+        2. If pyzbar unavailable OR pyzbar fails: Use OpenCV with extensive preprocessing
+        """
+
+        # Strategy 1: If pyzbar is available, try it first with various techniques
+        if PYZBAR_AVAILABLE:
+            # Quick direct attempt
+            decoded_objects = pyzbar.decode(image, symbols=[ZBarSymbol.QRCODE])
+            if decoded_objects:
+                return decoded_objects[0].data.decode('utf-8')
+
+            # Try with preprocessing
+            processed_images = self.preprocess_image_for_qr(image)
+            for processed_img in processed_images:
                 decoded_objects = pyzbar.decode(
-                    resized, symbols=[ZBarSymbol.QRCODE])
+                    processed_img, symbols=[ZBarSymbol.QRCODE])
                 if decoded_objects:
                     return decoded_objects[0].data.decode('utf-8')
+
+            # Try to detect QR region using contours first
+            qr_region = self.detect_qr_with_contours(image)
+            if qr_region is not None:
+                decoded_objects = pyzbar.decode(
+                    qr_region, symbols=[ZBarSymbol.QRCODE])
+                if decoded_objects:
+                    return decoded_objects[0].data.decode('utf-8')
+
+                # Try preprocessed regions
+                processed_regions = self.preprocess_image_for_qr(qr_region)
+                for processed_region in processed_regions:
+                    decoded_objects = pyzbar.decode(
+                        processed_region, symbols=[ZBarSymbol.QRCODE])
+                    if decoded_objects:
+                        return decoded_objects[0].data.decode('utf-8')
+
+            # Try different scales
+            for scale in [0.5, 1.5, 2.0]:
+                height, width = image.shape[:2]
+                new_width = int(width * scale)
+                new_height = int(height * scale)
+
+                if new_width > 50 and new_height > 50:
+                    resized = cv2.resize(
+                        image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+                    decoded_objects = pyzbar.decode(
+                        resized, symbols=[ZBarSymbol.QRCODE])
+                    if decoded_objects:
+                        return decoded_objects[0].data.decode('utf-8')
+
+        # Strategy 2: Fallback to OpenCV (or primary if pyzbar unavailable)
+        # OpenCV's detector handles preprocessing internally
+        qr_data = self.opencv_qr_detection(image)
+        if qr_data:
+            return qr_data
 
         return None
 
@@ -153,94 +218,105 @@ class PrescriptionQRReader:
         """
         if not TESSERACT_AVAILABLE:
             return None
-        
+
         try:
             # Resize large images for faster processing, but not too aggressively
             height, width = image.shape[:2]
             max_dimension = 2000  # Less aggressive resize - keep more detail for text
-            
+
             if max(height, width) > max_dimension:
                 # Calculate scaling factor to keep aspect ratio
                 scale_factor = max_dimension / max(height, width)
                 new_width = int(width * scale_factor)
                 new_height = int(height * scale_factor)
-                
-                print(f"Resizing from {width}x{height} to {new_width}x{new_height} for faster processing...")
+
+                print(
+                    f"Resizing from {width}x{height} to {new_width}x{new_height} for faster processing...")
                 # Use INTER_AREA for downscaling to preserve text quality
-                image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+                image = cv2.resize(
+                    image, (new_width, new_height), interpolation=cv2.INTER_AREA)
             else:
-                print(f"Image size {width}x{height} is reasonable for OCR, keeping original size")
-            
+                print(
+                    f"Image size {width}x{height} is reasonable for OCR, keeping original size")
+
             # Preprocess image for better OCR
             processed_images = []
-            
+
             # Convert to grayscale
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             processed_images.append(gray)
-            
+
             # Apply different preprocessing techniques
             # 1. Gaussian blur + threshold
             blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-            _, thresh1 = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            _, thresh1 = cv2.threshold(
+                blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             processed_images.append(thresh1)
-            
+
             # 2. Adaptive threshold
-            adaptive = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+            adaptive = cv2.adaptiveThreshold(
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
             processed_images.append(adaptive)
-            
+
             # 3. Morphological operations to clean up text
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
             morph = cv2.morphologyEx(thresh1, cv2.MORPH_CLOSE, kernel)
             processed_images.append(morph)
-            
+
             # 4. Add one upscaling option to help with small text
             # Only upscale if the image is reasonably sized after initial resize
             current_height, current_width = gray.shape
             if current_width < 2500:  # Only upscale if not already very large
-                upscaled = cv2.resize(gray, (int(current_width * 1.5), int(current_height * 1.5)), interpolation=cv2.INTER_CUBIC)
+                upscaled = cv2.resize(gray, (int(
+                    current_width * 1.5), int(current_height * 1.5)), interpolation=cv2.INTER_CUBIC)
                 processed_images.append(upscaled)
-            
+
             # 5. Rotation handling for rotated images (like 12.jpg)
             # Only try common rotations to balance speed vs accuracy
             for angle in [90, 270]:  # Skip 180 since it's usually less common
                 height, width = gray.shape
                 center = (width // 2, height // 2)
                 rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-                rotated = cv2.warpAffine(gray, rotation_matrix, (width, height))
+                rotated = cv2.warpAffine(
+                    gray, rotation_matrix, (width, height))
                 processed_images.append(rotated)
-            
+
             # Try OCR on each processed image
             for processed_img in processed_images:
                 try:
                     # Use fewer PSM modes for faster processing
-                    psm_modes = [6, 8]  # Reduced from 4 to 2 most effective modes
+                    # Reduced from 4 to 2 most effective modes
+                    psm_modes = [6, 8]
                     found_info = {}
-                    
+
                     for psm in psm_modes:
                         # Configure tesseract for better number detection (NDC focused)
                         config = f'--oem 3 --psm {psm} -c tessedit_char_whitelist=0123456789-'
-                        text_numbers = pytesseract.image_to_string(processed_img, config=config)
-                        
+                        text_numbers = pytesseract.image_to_string(
+                            processed_img, config=config)
+
                         # Also get full text for RX number detection
                         config_full = f'--oem 3 --psm {psm}'
-                        text_full = pytesseract.image_to_string(processed_img, config=config_full)
-                        
-                        # Look for NDC patterns in the number-focused extracted text
+                        text_full = pytesseract.image_to_string(
+                            processed_img, config=config_full)
+
                         if 'ndc' not in found_info:
                             ndc_patterns = [
-                                r'(\d{5}-\d{4}-\d{1,2})',  # XXXXX-XXXX-XX (removed word boundaries)
+                                # XXXXX-XXXX-XX (removed word boundaries)
+                                r'(\d{5}-\d{4}-\d{1,2})',
                                 r'(\d{4}-\d{4}-\d{1,2})',  # XXXX-XXXX-XX
-                                r'(\d{5}-\d{3}-\d{1,2})',  # XXXXX-XXX-XX (alternative format)
-                                r'(\d{4}-\d{3}-\d{1,2})'   # XXXX-XXX-XX (alternative format)
+                                # XXXXX-XXX-XX (alternative format)
+                                r'(\d{5}-\d{3}-\d{1,2})',
+                                # XXXX-XXX-XX (alternative format)
+                                r'(\d{4}-\d{3}-\d{1,2})'
                             ]
-                            
+
                             for pattern in ndc_patterns:
                                 matches = re.findall(pattern, text_numbers)
                                 if matches:
                                     found_info['ndc'] = matches[0]
                                     break
-                            
-                            # Also try without requiring word boundaries (in case OCR adds spaces)
+
                             if 'ndc' not in found_info:
                                 loose_patterns = [
                                     r'(\d{5})\s*-\s*(\d{4})\s*-\s*(\d{2})',
@@ -248,79 +324,89 @@ class PrescriptionQRReader:
                                     r'(\d{5})\s*-\s*(\d{3})\s*-\s*(\d{2})',
                                     r'(\d{4})\s*-\s*(\d{3})\s*-\s*(\d{2})'
                                 ]
-                                
+
                                 for pattern in loose_patterns:
                                     matches = re.findall(pattern, text_numbers)
                                     if matches:
                                         # Reconstruct NDC by joining the groups
-                                        found_info['ndc'] = '-'.join(matches[0])
+                                        found_info['ndc'] = '-'.join(
+                                            matches[0])
                                         break
-                        
+
                         # Look for RX number patterns in the full text
                         if 'rx_number' not in found_info:
                             rx_patterns = [
-                                r'(?:Rx|RX)\s*#?\s*(\d+)',                           # Rx #123456 or RX 123456
-                                r'(?:Prescription|PRESCRIPTION)\s*(?:Number|#)?\s*:?\s*(\d+)',  # Prescription Number: 123456
-                                r'(?:Script|SCRIPT)\s*(?:ID|Number)\s*:?\s*(\d+)',   # Script ID: 123456
-                                r'(?:Rx|RX)\s*(?:Number|No|NUM)\s*:?\s*(\d+)',       # Rx Number: 123456
-                                r'(?:Prescription|PRESCRIPTION)\s*:?\s*(\d+)',        # Prescription: 123456
-                                r'(?:RX|Rx)\s*(\d{6,})',                            # RX 123456 (6+ digits, space optional)
-                                r'(?:RX|Rx)(\d{6,})',                               # RX123456 (no space, 6+ digits)
-                                r'#\s*(\d{6,})'                                     # #123456 (standalone with 6+ digits)
+                                # Rx #123456 or RX 123456
+                                r'(?:Rx|RX)\s*#?\s*(\d+)',
+                                # Prescription Number: 123456
+                                r'(?:Prescription|PRESCRIPTION)\s*(?:Number|#)?\s*:?\s*(\d+)',
+                                # Script ID: 123456
+                                r'(?:Script|SCRIPT)\s*(?:ID|Number)\s*:?\s*(\d+)',
+                                # Rx Number: 123456
+                                r'(?:Rx|RX)\s*(?:Number|No|NUM)\s*:?\s*(\d+)',
+                                # Prescription: 123456
+                                r'(?:Prescription|PRESCRIPTION)\s*:?\s*(\d+)',
+                                # RX 123456 (6+ digits, space optional)
+                                r'(?:RX|Rx)\s*(\d{6,})',
+                                # RX123456 (no space, 6+ digits)
+                                r'(?:RX|Rx)(\d{6,})',
+                                # #123456 (standalone with 6+ digits)
+                                r'#\s*(\d{6,})'
                             ]
-                            
+
                             for pattern in rx_patterns:
-                                matches = re.findall(pattern, text_full, re.IGNORECASE)
+                                matches = re.findall(
+                                    pattern, text_full, re.IGNORECASE)
                                 if matches:
                                     found_info['rx_number'] = matches[0]
                                     break
-                        
-                        # If we found both or either, we can return
+
                         if found_info:
-                            if len(found_info) == 2 or psm == psm_modes[-1]:  # Found both or last attempt
+                            # Found both or last attempt
+                            if len(found_info) == 2 or psm == psm_modes[-1]:
                                 break
-                                
-                    # Return found info if any
+
                     if found_info:
                         return found_info
-                        
+
                 except Exception as e:
-                    # Continue with next image/config if this one fails
                     continue
-            
+
             # If no strict patterns found, try a more lenient approach for NDC
             # Look for any sequence that might be an NDC (only if we haven't found anything yet)
             if not found_info:
-                for processed_img in processed_images[:2]:  # Only try the 2 best preprocessed images
+                # Only try the 2 best preprocessed images
+                for processed_img in processed_images[:2]:
                     try:
                         text = pytesseract.image_to_string(processed_img)
                         # Look for number sequences that could be NDCs
                         numbers = re.findall(r'\d+', text)
-                        
+
                         # Try to find sequences that could form an NDC
                         for i in range(len(numbers) - 2):
-                            part1, part2, part3 = numbers[i], numbers[i+1], numbers[i+2]
-                            
+                            part1, part2, part3 = numbers[i], numbers[i +
+                                                                      1], numbers[i+2]
+
                             # Check if this could be a valid NDC format
-                            if ((len(part1) == 4 or len(part1) == 5) and 
-                                (len(part2) == 3 or len(part2) == 4) and 
-                                len(part3) == 2):
+                            if ((len(part1) == 4 or len(part1) == 5) and
+                                (len(part2) == 3 or len(part2) == 4) and
+                                    len(part3) == 2):
                                 potential_ndc = f"{part1}-{part2}-{part3}"
                                 found_info['ndc'] = potential_ndc
                                 break
-                                
+
                     except Exception:
                         continue
-                    
+
                     if found_info.get('ndc'):
                         break
-            
+
             # Return whatever we found (could be NDC, RX, both, or empty dict)
             return found_info if found_info else None
-                    
+
         except Exception as e:
             print(f"Error in prescription info text detection: {e}")
-        
+
         return None
 
     def parse_prescription_data(self, qr_data: str) -> Dict:
@@ -358,12 +444,12 @@ class PrescriptionQRReader:
             try:
                 info_str = qr_data[11:]  # Remove 'TEXT_INFO: ' prefix
                 info_dict = ast.literal_eval(info_str)
-                
+
                 if info_dict.get('ndc'):
                     parsed_data['ndc_number'] = info_dict['ndc']
                 if info_dict.get('rx_number'):
                     parsed_data['rx_number'] = info_dict['rx_number']
-                    
+
                 parsed_data['detection_method'] = 'TEXT_OCR'
                 return parsed_data
             except (ValueError, SyntaxError):
@@ -541,14 +627,14 @@ class PrescriptionQRReader:
 
     def format_prescription_output(self, parsed_data: Dict) -> str:
         output = []
-        
+
         # Check detection method to customize output
         if parsed_data.get('detection_method') == 'TEXT_OCR':
             output.append("=" * 50)
             output.append("PRESCRIPTION INFORMATION (Text Detection)")
             output.append("=" * 50)
             output.append("")
-            
+
             found_items = []
             if parsed_data.get('ndc_number'):
                 output.append(f"NDC Number: {parsed_data['ndc_number']}")
@@ -556,9 +642,10 @@ class PrescriptionQRReader:
             if parsed_data.get('rx_number'):
                 output.append(f"RX Number: {parsed_data['rx_number']}")
                 found_items.append("RX")
-            
+
             output.append("")
-            output.append(f"Note: {', '.join(found_items)} number(s) detected from text.")
+            output.append(
+                f"Note: {', '.join(found_items)} number(s) detected from text.")
             output.append("No additional prescription information available.")
             output.append("For complete prescription data, use a QR code.")
         else:
@@ -576,7 +663,8 @@ class PrescriptionQRReader:
             if parsed_data.get('medication_name'):
                 output.append(f"Medication: {parsed_data['medication_name']}")
             if parsed_data.get('medication_strength'):
-                output.append(f"Strength: {parsed_data['medication_strength']}")
+                output.append(
+                    f"Strength: {parsed_data['medication_strength']}")
             if parsed_data.get('ndc_number'):
                 output.append(f"NDC: {parsed_data['ndc_number']}")
 
@@ -606,6 +694,10 @@ class PrescriptionQRReader:
         return "\n".join(output)
 
     def read_from_camera(self) -> Optional[str]:
+        if not PYZBAR_AVAILABLE:
+            print("Error: pyzbar not available. Camera QR detection requires pyzbar.")
+            return None
+
         try:
             self.cap = cv2.VideoCapture(0)
 
@@ -651,18 +743,22 @@ class PrescriptionQRReader:
                     return qr_data
                 else:
                     # Try prescription info detection as fallback
-                    prescription_info = self.detect_prescription_info_from_text(frame)
+                    prescription_info = self.detect_prescription_info_from_text(
+                        frame)
                     if prescription_info:
                         font = cv2.FONT_HERSHEY_SIMPLEX
                         display_text = []
                         if prescription_info.get('ndc'):
-                            display_text.append(f"NDC: {prescription_info['ndc']}")
+                            display_text.append(
+                                f"NDC: {prescription_info['ndc']}")
                         if prescription_info.get('rx_number'):
-                            display_text.append(f"RX: {prescription_info['rx_number']}")
-                        
+                            display_text.append(
+                                f"RX: {prescription_info['rx_number']}")
+
                         for i, text in enumerate(display_text):
-                            cv2.putText(frame, text, (10, 30 + i*30), font, 0.7, (0, 255, 255), 2)
-                        
+                            cv2.putText(frame, text, (10, 30 + i*30),
+                                        font, 0.7, (0, 255, 255), 2)
+
                         cv2.imshow('Prescription QR Code Reader', frame)
                         cv2.waitKey(2000)  # Show detection for 2 seconds
 
@@ -715,28 +811,33 @@ class PrescriptionQRReader:
                 return qr_data
             else:
                 print("✗ No QR code found in image after trying all detection methods")
-                
+
                 # Fallback to prescription info detection from text
                 print("Attempting prescription info detection from text as fallback...")
-                prescription_info = self.detect_prescription_info_from_text(image)
-                
+                prescription_info = self.detect_prescription_info_from_text(
+                    image)
+
                 if prescription_info:
                     found_items = []
                     if prescription_info.get('ndc'):
                         found_items.append(f"NDC: {prescription_info['ndc']}")
                     if prescription_info.get('rx_number'):
-                        found_items.append(f"RX: {prescription_info['rx_number']}")
-                    
-                    print(f"✓ Prescription info detected: {', '.join(found_items)}")
+                        found_items.append(
+                            f"RX: {prescription_info['rx_number']}")
+
+                    print(
+                        f"✓ Prescription info detected: {', '.join(found_items)}")
                     # Return a format that can be parsed
                     return f"TEXT_INFO: {prescription_info}"
                 else:
                     print("✗ No prescription info found in image text")
                     print("Tips:")
-                    print("- Ensure the QR code or prescription label is clearly visible")
+                    print(
+                        "- Ensure the QR code or prescription label is clearly visible")
                     print("- Try better lighting conditions")
                     print("- Make sure the text isn't too small or blurry")
-                    print("- Check if the image contains a valid QR code, NDC number, or RX number")
+                    print(
+                        "- Check if the image contains a valid QR code, NDC number, or RX number")
                     return None
 
         except Exception as e:

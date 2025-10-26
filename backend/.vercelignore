@@ -1,0 +1,50 @@
+# Development files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+*.md
+
+# Sample/test images and large files
+sample_images/
+test_images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.webp
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Development scripts and tests
+tests/

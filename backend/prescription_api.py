@@ -9,8 +9,7 @@ import io
 from PIL import Image
 import cv2
 import numpy as np
-from pyzbar import pyzbar
-from prescription_qr_reader import PrescriptionQRReader
+from prescription_qr_reader import PrescriptionQRReader, PYZBAR_AVAILABLE, TESSERACT_AVAILABLE
 import logging
 
 app = Flask(__name__)
@@ -66,12 +65,27 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'service': 'Prescription QR Code Reader API',
-        'version': '1.0.0'
+        'version': '1.0.0',
+        'capabilities': {
+            'qr_detection': True,
+            'qr_detection_method': 'pyzbar + opencv' if PYZBAR_AVAILABLE else 'opencv',
+            'text_detection': TESSERACT_AVAILABLE,
+            'text_detection_method': 'tesseract_ocr' if TESSERACT_AVAILABLE else 'unavailable',
+            'image_processing': True,
+            'opencv_version': cv2.__version__
+        },
+        'features': {
+            'qr_code_scanning': 'available',
+            'ndc_extraction': 'available_with_ocr' if TESSERACT_AVAILABLE else 'qr_only',
+            'rx_number_extraction': 'available_with_ocr' if TESSERACT_AVAILABLE else 'qr_only',
+            'prescription_parsing': 'available'
+        }
     }), 200
 
 
 @app.route('/api/scan-qr', methods=['POST'])
 def scan_qr_code():
+    # Note: QR detection will use OpenCV's built-in detector if pyzbar is not available
     try:
         qr_data = None
         image_source = None
