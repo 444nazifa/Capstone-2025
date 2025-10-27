@@ -19,9 +19,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.datetime.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.data.UserSession
+import com.example.myapplication.viewmodel.ProfileViewModel
+import com.example.myapplication.viewmodel.ProfileUpdateState
 
 // Simple profile model for this screen
 data class UserProfile(
@@ -34,7 +38,8 @@ data class UserProfile(
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    onSignOut: () -> Unit = {}
+    onSignOut: () -> Unit = {},
+    viewModel: ProfileViewModel = viewModel { ProfileViewModel() }
 ) {
     // --- demo state (wire to real data later) ---
     var medReminders by remember { mutableStateOf(true) }
@@ -43,13 +48,15 @@ fun ProfileScreen(
 
     // Get user from session
     val sessionUser by UserSession.currentUser.collectAsState()
+    val token by UserSession.currentToken.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
 
     // Convert backend User to UserProfile format
     val initialProfile = sessionUser?.let {
         UserProfile(
             name = it.name,
             email = it.email,
-            phone = "", // Phone not in backend yet
+            phone = it.phone ?: "",
             dateOfBirth = formatDateForDisplay(it.date_of_birth)
         )
     } ?: UserProfile(
@@ -66,6 +73,30 @@ fun ProfileScreen(
 
     val brandGreen = Color(0xFF2E7D32)
     val cardShape = RoundedCornerShape(12.dp)
+
+    // Handle update state
+    LaunchedEffect(updateState) {
+        when (updateState) {
+            is ProfileUpdateState.Success -> {
+                // Update local state with session data
+                sessionUser?.let {
+                    user = UserProfile(
+                        name = it.name,
+                        email = it.email,
+                        phone = it.phone ?: "",
+                        dateOfBirth = formatDateForDisplay(it.date_of_birth)
+                    )
+                    edit = user
+                }
+                isEditing = false
+                viewModel.clearState()
+            }
+            is ProfileUpdateState.Error -> {
+                // Error is shown in the EditProfileCard
+            }
+            else -> {}
+        }
+    }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -264,24 +295,26 @@ fun ProfileScreen(
                     value = edit,
                     onChange = { edit = it },
                     onSave = {
-                        user = edit
-                        // Update the session with new data
-                        sessionUser?.let { currentUser ->
-                            val updatedUser = currentUser.copy(
+                        // Call backend API to update profile
+                        token?.let { authToken ->
+                            viewModel.updateProfile(
+                                token = authToken,
                                 name = edit.name,
                                 email = edit.email,
-                                date_of_birth = formatDateForBackend(edit.dateOfBirth)
+                                dateOfBirth = formatDateForBackend(edit.dateOfBirth),
+                                phone = edit.phone.ifBlank { null }
                             )
-                            UserSession.updateUser(updatedUser)
                         }
-                        isEditing = false
                     },
                     onCancel = {
                         edit = user
                         isEditing = false
+                        viewModel.clearState()
                     },
                     brandGreen = brandGreen,
-                    cardShape = cardShape
+                    cardShape = cardShape,
+                    isLoading = updateState is ProfileUpdateState.Loading,
+                    errorMessage = (updateState as? ProfileUpdateState.Error)?.message
                 )
             }
         }
@@ -332,7 +365,9 @@ private fun EditProfileCard(
     onSave: () -> Unit,
     onCancel: () -> Unit,
     brandGreen: Color,
-    cardShape: RoundedCornerShape
+    cardShape: RoundedCornerShape,
+    isLoading: Boolean = false,
+    errorMessage: String? = null
 ) {
     var name by remember { mutableStateOf(value.name) }
     var email by remember { mutableStateOf(value.email) }
@@ -389,14 +424,14 @@ private fun EditProfileCard(
                     phone = it
                     onChange(value.copy(phone = it))
                 },
-                label = { Text("Phone Number") },
+                label = { Text("Phone (Optional)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                 isError = phone.isNotBlank() && !phoneOk,
                 supportingText = {
                     if (phone.isNotBlank() && !phoneOk)
-                        Text("Enter a valid US phone, e.g. (123) 456-7890")
+                        Text("Enter a valid US phone number, e.g. (555) 123-4567")
                 }
             )
 
@@ -417,17 +452,50 @@ private fun EditProfileCard(
                 }
             )
 
+            // Error message display
+            errorMessage?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = it,
+                        color = Color(0xFFD32F2F),
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
-                    onClick = { if (allOk) onSave() },
-                    enabled = allOk,
+                    onClick = { if (allOk && !isLoading) onSave() },
+                    enabled = allOk && !isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = brandGreen,
                         disabledContainerColor = brandGreen.copy(alpha = 0.4f)
                     )
-                ) { Text("Save Changes") }
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text("Save Changes")
+                    }
+                }
 
-                OutlinedButton(onClick = onCancel) { Text("Cancel") }
+                OutlinedButton(
+                    onClick = onCancel,
+                    enabled = !isLoading
+                ) {
+                    Text("Cancel")
+                }
             }
         }
     }
