@@ -22,6 +22,12 @@ export interface AuthResponse {
   token?: string;
 }
 
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+  date_of_birth?: string;
+}
+
 export interface ErrorResponse {
   success: false;
   message: string;
