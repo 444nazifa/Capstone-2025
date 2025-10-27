@@ -14,7 +14,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.example.myapplication.viewmodel.HomeViewModel
-import androidx.compose.ui.graphics.vector.ImageVector // 👈 FIXED import
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -93,8 +93,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    val upcomingMedications = medications.filter { !it.taken }
-                    val completedMedications = medications.filter { it.taken }
+                    val upcomingMedications: List<MedicationReminder> = medications.filter { !it.taken }
+                    val completedMedications: List<MedicationReminder> = medications.filter { it.taken }
 
                     // UPCOMING SECTION
                     SectionHeader(
@@ -103,7 +103,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         label = "Upcoming (${upcomingMedications.size})"
                     )
 
-                    upcomingMedications.forEach { med ->
+                    upcomingMedications.forEach { med: MedicationReminder ->
                         MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
                         Spacer(modifier = Modifier.height(10.dp))
                     }
@@ -117,7 +117,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         label = "Completed (${completedMedications.size})"
                     )
 
-                    completedMedications.forEach { med ->
+                    completedMedications.forEach { med: MedicationReminder ->
                         MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
                         Spacer(modifier = Modifier.height(10.dp))
                     }
@@ -245,7 +245,7 @@ fun WeeklyCalendarCardStyled(
                             modifier = Modifier.padding(top = 4.dp),
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            medsForDay.take(3).forEach { med ->
+                            medsForDay.take(3).forEach { med: MedicationReminder ->
                                 Box(
                                     modifier = Modifier
                                         .size(6.dp)
