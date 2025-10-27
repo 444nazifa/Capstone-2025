@@ -16,22 +16,25 @@ import com.example.myapplication.viewmodel.HomeViewModel
 import com.example.myapplication.viewmodel.ScanMedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.data.UserSession
 
 @Composable
 fun App() {
     CareCapsuleTheme {
-        // Check if user is already logged in
-        val isLoggedIn by com.example.myapplication.data.UserSession.currentUser.collectAsState()
-        val initialScreen = if (isLoggedIn != null) "main" else "login"
+        // Observe current user
+        val currentUser by UserSession.currentUser.collectAsState()
+        val initialScreen = if (currentUser != null) "main" else "login"
 
         var currentScreen by remember { mutableStateOf(initialScreen) }
         val homeViewModel = remember { HomeViewModel() }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
-        // Watch for logout and redirect to login
-        LaunchedEffect(isLoggedIn) {
-            if (isLoggedIn == null && currentScreen == "main") {
+        // Watch for session changes and redirect to login when the user is signed out
+        LaunchedEffect(currentUser) {
+            if (currentUser == null) {
                 currentScreen = "login"
+            } else {
+                currentScreen = "main"
             }
         }
 
@@ -40,7 +43,7 @@ fun App() {
 
                 // Login screen first
                 "login" -> LoginScreen(
-                    onLoginSuccess = { currentScreen = "main" }, // switch to main after login
+                    onLoginSuccess = { },
                     onForgotPassword = { /* later feature */ },
                     onCreateAccount = { currentScreen = "createAccount" } // Go to Create Account
                 )
@@ -55,7 +58,10 @@ fun App() {
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
                     scanMedicationViewModel = scanMedicationViewModel,
-                    onSignOut = { currentScreen = "login" }
+                    onSignOut = {
+                        // Ensure the session is cleared first, then navigate to login.
+                        UserSession.logout()
+                    }
                 )
             }
         }
