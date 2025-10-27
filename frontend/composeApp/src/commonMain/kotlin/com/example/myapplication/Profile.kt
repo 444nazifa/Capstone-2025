@@ -269,7 +269,6 @@ fun ProfileScreen(
                 ) {
                     Button(
                         onClick = {
-                            UserSession.logout()
                             onSignOut()
                         },
                         modifier = Modifier
@@ -504,7 +503,7 @@ private fun EditProfileCard(
 /* ───────── Validation helpers ───────── */
 
 private fun isValidEmail(s: String): Boolean {
-    val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    val re = Regex("^[A-Za-z0-9._%+-]+@[A-ZaZ0-9.-]+\\.[A-Za-z]{2,}$")
     return re.matches(s.trim())
 }
 
