@@ -93,7 +93,8 @@ router.post('/register', async (req: Request<{}, AuthResponse | ErrorResponse, R
         id: profileData.id,
         email: profileData.email,
         name: profileData.name,
-        date_of_birth: profileData.date_of_birth
+        date_of_birth: profileData.date_of_birth,
+        phone: profileData.phone
       },
       token
     });
@@ -159,7 +160,8 @@ router.post('/login', async (req: Request<{}, AuthResponse | ErrorResponse, Logi
         id: profileData.id,
         email: profileData.email,
         name: profileData.name,
-        date_of_birth: profileData.date_of_birth
+        date_of_birth: profileData.date_of_birth,
+        phone: profileData.phone
       },
       token
     });
@@ -189,7 +191,8 @@ router.get('/profile', authenticateToken, async (req: AuthenticatedRequest, res:
         id: req.user.id,
         email: req.user.email,
         name: req.user.name,
-        date_of_birth: req.user.date_of_birth
+        date_of_birth: req.user.date_of_birth,
+        phone: req.user.phone
       }
     });
   } catch (error) {
@@ -225,6 +228,7 @@ router.put('/profile', authenticateToken, async (req: AuthenticatedRequest, res:
     if (value.name !== undefined) updateData.name = value.name;
     if (value.email !== undefined) updateData.email = value.email;
     if (value.date_of_birth !== undefined) updateData.date_of_birth = value.date_of_birth;
+    if (value.phone !== undefined) updateData.phone = value.phone;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({
@@ -284,7 +288,8 @@ router.put('/profile', authenticateToken, async (req: AuthenticatedRequest, res:
         id: updatedProfile.id,
         email: updatedProfile.email,
         name: updatedProfile.name,
-        date_of_birth: updatedProfile.date_of_birth
+        date_of_birth: updatedProfile.date_of_birth,
+        phone: updatedProfile.phone
       }
     });
 

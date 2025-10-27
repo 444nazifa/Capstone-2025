@@ -45,5 +45,8 @@ export const updateProfileSchema = Joi.object({
     'date.base': 'Date of birth must be a valid date',
     'date.iso': 'Date of birth must be in ISO format (YYYY-MM-DD)',
     'date.max': 'Date of birth cannot be in the future'
+  }),
+  phone: Joi.string().pattern(/^\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/).optional().messages({
+    'string.pattern.base': 'Please provide a valid US phone number'
   })
 });

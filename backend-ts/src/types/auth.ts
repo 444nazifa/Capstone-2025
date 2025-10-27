@@ -18,6 +18,7 @@ export interface AuthResponse {
     email: string;
     name: string;
     date_of_birth: string;
+    phone?: string;
   };
   token?: string;
 }
@@ -26,6 +27,7 @@ export interface UpdateProfileRequest {
   name?: string;
   email?: string;
   date_of_birth?: string;
+  phone?: string;
 }
 
 export interface ErrorResponse {

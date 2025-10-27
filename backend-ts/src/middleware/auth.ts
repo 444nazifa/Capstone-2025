@@ -9,6 +9,7 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     name: string;
     date_of_birth: string;
+    phone?: string;
   };
 }
 
@@ -52,7 +53,8 @@ export const authenticateToken = async (
       id: userData.id,
       email: userData.email,
       name: userData.name,
-      date_of_birth: userData.date_of_birth
+      date_of_birth: userData.date_of_birth,
+      phone: userData.phone
     };
 
     next();
