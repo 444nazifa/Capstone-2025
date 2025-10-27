@@ -98,17 +98,23 @@ class AuthApiService(
         token: String,
         name: String,
         email: String,
-        dateOfBirth: String
+        dateOfBirth: String,
+        phone: String? = null
     ): Result<AuthResponse> {
         return try {
+            val bodyMap = mutableMapOf(
+                "name" to name,
+                "email" to email,
+                "date_of_birth" to dateOfBirth
+            )
+            if (phone != null) {
+                bodyMap["phone"] = phone
+            }
+
             val response = client.put("$baseUrl/api/auth/profile") {
                 contentType(ContentType.Application.Json)
                 header("Authorization", "Bearer $token")
-                setBody(mapOf(
-                    "name" to name,
-                    "email" to email,
-                    "date_of_birth" to dateOfBirth
-                ))
+                setBody(bodyMap)
             }
 
             val authResponse: AuthResponse = response.body()

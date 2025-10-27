@@ -28,6 +28,13 @@ fun App() {
         val homeViewModel = remember { HomeViewModel() }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
+        // Watch for logout and redirect to login
+        LaunchedEffect(isLoggedIn) {
+            if (isLoggedIn == null && currentScreen == "main") {
+                currentScreen = "login"
+            }
+        }
+
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
 

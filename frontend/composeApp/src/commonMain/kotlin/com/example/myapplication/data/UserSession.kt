@@ -22,6 +22,7 @@ object UserSession {
 
     private val _authToken = MutableStateFlow<String?>(null)
     val authToken: StateFlow<String?> = _authToken.asStateFlow()
+    val currentToken: StateFlow<String?> = _authToken.asStateFlow() // Alias for compatibility
 
     fun initialize(secureStorage: SecureStorage) {
         storage = secureStorage
