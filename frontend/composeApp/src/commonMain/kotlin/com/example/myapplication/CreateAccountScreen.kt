@@ -398,7 +398,7 @@ private fun parseDobOrNull(s: String): LocalDate? {
 }
 
 private fun isReasonableDob(date: LocalDate): Boolean {
-    val now = LocalDate.now()
+    val now = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val age = now.year - date.year - if (now.dayOfYear < date.dayOfYear) 1 else 0
 
     return age in 0..120
