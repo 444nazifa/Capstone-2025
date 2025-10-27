@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import com.example.myapplication.data.UserSession
 
 // Simple profile model for this screen
 data class UserProfile(
@@ -31,23 +32,35 @@ data class UserProfile(
 )
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
+fun ProfileScreen(
+    modifier: Modifier = Modifier,
+    onSignOut: () -> Unit = {}
+) {
     // --- demo state (wire to real data later) ---
     var medReminders by remember { mutableStateOf(true) }
     var refillAlerts by remember { mutableStateOf(true) }
     var genericInfo by remember { mutableStateOf(true) }
 
-    // current user + edit state
-    var user by remember {
-        mutableStateOf(
-            UserProfile(
-                name = "John Doe",
-                email = "johndoe@gmail.com",
-                phone = "(123) 456-7890",
-                dateOfBirth = "01/01/1990"
-            )
+    // Get user from session
+    val sessionUser by UserSession.currentUser.collectAsState()
+
+    // Convert backend User to UserProfile format
+    val initialProfile = sessionUser?.let {
+        UserProfile(
+            name = it.name,
+            email = it.email,
+            phone = "", // Phone not in backend yet
+            dateOfBirth = formatDateForDisplay(it.date_of_birth)
         )
-    }
+    } ?: UserProfile(
+        name = "Guest User",
+        email = "guest@example.com",
+        phone = "",
+        dateOfBirth = "01/01/1990"
+    )
+
+    // current user + edit state
+    var user by remember(sessionUser) { mutableStateOf(initialProfile) }
     var isEditing by remember { mutableStateOf(false) }
     var edit by remember { mutableStateOf(user) }
 
@@ -216,6 +229,35 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
                 }
             }
 
+            // ───────── Sign Out Button ─────────
+            if (sessionUser != null && !isEditing) {
+                OutlinedCard(
+                    shape = cardShape,
+                    border = BorderStroke(1.dp, Color(0xFFD32F2F).copy(alpha = 0.5f)),
+                    colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+                ) {
+                    Button(
+                        onClick = {
+                            UserSession.logout()
+                            onSignOut()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFD32F2F),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "Sign Out",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
+            }
+
             // ───────── Edit Profile (shown when editing) ─────────
             if (isEditing) {
                 EditProfileCard(
@@ -223,6 +265,15 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
                     onChange = { edit = it },
                     onSave = {
                         user = edit
+                        // Update the session with new data
+                        sessionUser?.let { currentUser ->
+                            val updatedUser = currentUser.copy(
+                                name = edit.name,
+                                email = edit.email,
+                                date_of_birth = formatDateForBackend(edit.dateOfBirth)
+                            )
+                            UserSession.updateUser(updatedUser)
+                        }
                         isEditing = false
                     },
                     onCancel = {
@@ -290,7 +341,7 @@ private fun EditProfileCard(
 
     // live validation
     val emailOk = remember(email) { isValidEmail(email) }
-    val phoneOk = remember(phone) { isValidUsPhone(phone) }
+    val phoneOk = remember(phone) { phone.isBlank() || isValidUsPhone(phone) }
     val dobParsed = remember(dob) { parseDobOrNull(dob) }
     val dobOk = remember(dobParsed) { dobParsed?.let { isReasonableDob(it) } == true }
 
@@ -414,6 +465,40 @@ private fun isReasonableDob(dob: LocalDate): Boolean {
         (today.monthNumber == dob.monthNumber && today.dayOfMonth < dob.dayOfMonth)
     ) 1 else 0
     return years in 0..120
+}
+
+// Convert YYYY-MM-DD from backend to MM/DD/YYYY for display
+private fun formatDateForDisplay(backendDate: String): String {
+    return try {
+        val parts = backendDate.split("-")
+        if (parts.size == 3) {
+            val year = parts[0]
+            val month = parts[1]
+            val day = parts[2]
+            "$month/$day/$year"
+        } else {
+            backendDate
+        }
+    } catch (e: Exception) {
+        backendDate
+    }
+}
+
+// Convert MM/DD/YYYY from display to YYYY-MM-DD for backend
+private fun formatDateForBackend(displayDate: String): String {
+    return try {
+        val parts = displayDate.split("/")
+        if (parts.size == 3) {
+            val month = parts[0].padStart(2, '0')
+            val day = parts[1].padStart(2, '0')
+            val year = parts[2]
+            "$year-$month-$day"
+        } else {
+            displayDate
+        }
+    } catch (e: Exception) {
+        displayDate
+    }
 }
 
 @Preview

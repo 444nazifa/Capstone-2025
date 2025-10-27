@@ -18,23 +18,34 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.jetbrains.compose.resources.painterResource
 import myapplication.composeapp.generated.resources.Res
 import myapplication.composeapp.generated.resources.care_capsule_logo
 import myapplication.composeapp.generated.resources.login_background
 import kotlinx.datetime.*
+import com.example.myapplication.viewmodel.CreateAccountViewModel
+import com.example.myapplication.data.AuthState
 
 @Composable
 fun CreateAccountScreen(
-    onSignUp: () -> Unit = {},
-    onLoginClick: () -> Unit = {}
+    onSignUpSuccess: () -> Unit = {},
+    onLoginClick: () -> Unit = {},
+    viewModel: CreateAccountViewModel = viewModel { CreateAccountViewModel() }
 ) {
     // --- form state ---
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var dob by remember { mutableStateOf("") } // MM/DD/YYYY
+
+    // Collect state from ViewModel
+    val authState by viewModel.authState.collectAsState()
+    val nameError by viewModel.nameError.collectAsState()
+    val emailError by viewModel.emailError.collectAsState()
+    val passwordError by viewModel.passwordError.collectAsState()
+    val dobError by viewModel.dobError.collectAsState()
 
     // --- validation state (mirrors Profile) ---
     val emailOk = remember(email) { email.isBlank() || isValidEmail(email) }
@@ -50,6 +61,15 @@ fun CreateAccountScreen(
                 email.isNotBlank() && emailOk &&
                 password.length >= 6 &&
                 dobOk
+
+    val isLoading = authState is AuthState.Loading
+
+    // Handle success state
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onSignUpSuccess()
+        }
+    }
 
     // Use Box to layer background + content
     Box(modifier = Modifier.fillMaxSize()) {
@@ -262,10 +282,36 @@ fun CreateAccountScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // API Error Message
+                        AnimatedVisibility(
+                            visible = authState is AuthState.Error,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = (authState as? AuthState.Error)?.message ?: "An error occurred",
+                                    color = Color(0xFFD32F2F),
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+
+                        if (authState is AuthState.Error) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
                         // SIGN UP BUTTON
                         Button(
-                            onClick = onSignUp,
-                            enabled = formValid,
+                            onClick = {
+                                viewModel.register(name, email, password, dob)
+                            },
+                            enabled = formValid && !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
@@ -275,7 +321,14 @@ fun CreateAccountScreen(
                                 disabledContainerColor = Color(0xFFBDBDBD)
                             )
                         ) {
-                            Text("Sign Up", color = Color.White, fontWeight = FontWeight.Bold)
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Text("Sign Up", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))

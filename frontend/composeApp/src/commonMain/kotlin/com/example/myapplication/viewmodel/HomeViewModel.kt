@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.viewmodel
 
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
