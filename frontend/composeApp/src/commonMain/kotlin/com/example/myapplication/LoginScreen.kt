@@ -45,7 +45,7 @@ fun LoginScreen(
 
     // Validation (same approach as Create Account)
     val emailOk = remember(email) { email.isBlank() || isValidEmail(email) }
-    val passwordOk = remember(password) { password.isBlank() || password.length >= 6 }
+    val passwordOk = remember(password) { password.isBlank() || password.length >= 8 }
 
     val formValid = email.isNotBlank() && emailOk && passwordOk && password.isNotBlank()
     val isLoading = authState is AuthState.Loading
@@ -284,14 +284,10 @@ fun LoginScreen(
 
 // --- helpers ---
 private fun isValidEmail(s: String): Boolean {
-    val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    val re = Regex("^[A-Za-z0-9._%+-]+@[A-ZaZ0-9.-]+\\.[A-ZaZ]{2,}$")
     return re.matches(s.trim())
 }
 
-@Preview
-@Composable
-fun LoginScreenPreview() {
-    MaterialTheme {
-        LoginScreen()
-    }
+private fun isValidPassword(password: String): Boolean {
+    return password.length >= 6
 }
