@@ -12,13 +12,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.theme.CareCapsuleTheme
+import com.example.myapplication.viewmodel.HomeViewModel
+import com.example.myapplication.viewmodel.ScanMedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun App() {
     CareCapsuleTheme {
-        var currentScreen by remember { mutableStateOf("login") }  // 🔹 Track whether we're on login or main
+        // Check if user is already logged in
+        val isLoggedIn by com.example.myapplication.data.UserSession.currentUser.collectAsState()
+        val initialScreen = if (isLoggedIn != null) "main" else "login"
+
+        var currentScreen by remember { mutableStateOf(initialScreen) }
         val homeViewModel = remember { HomeViewModel() }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
@@ -27,21 +33,22 @@ fun App() {
 
                 // Login screen first
                 "login" -> LoginScreen(
-                    onLogin = { currentScreen = "main" }, // switch to main after login
+                    onLoginSuccess = { currentScreen = "main" }, // switch to main after login
                     onForgotPassword = { /* later feature */ },
                     onCreateAccount = { currentScreen = "createAccount" } // Go to Create Account
                 )
 
                 // Create Account Screen
                 "createAccount" -> CreateAccountScreen(
-                    onSignUp = { currentScreen = "main" },
+                    onSignUpSuccess = { currentScreen = "main" },
                     onLoginClick = { currentScreen = "login" }
                 )
 
                 // Main app (your bottom navigation)
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
-                    scanMedicationViewModel = scanMedicationViewModel
+                    scanMedicationViewModel = scanMedicationViewModel,
+                    onSignOut = { currentScreen = "login" }
                 )
             }
         }
@@ -51,7 +58,8 @@ fun App() {
 @Composable
 fun MainApp(
     homeViewModel: HomeViewModel,
-    scanMedicationViewModel: ScanMedicationViewModel
+    scanMedicationViewModel: ScanMedicationViewModel,
+    onSignOut: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf("home") }
 
@@ -99,7 +107,10 @@ fun MainApp(
                     println("Scanned barcode: $barcode")
                 }
             )
-            "profile" -> ProfileScreen(modifier = Modifier.padding(innerPadding))
+            "profile" -> ProfileScreen(
+                modifier = Modifier.padding(innerPadding),
+                onSignOut = onSignOut
+            )
         }
     }
 }

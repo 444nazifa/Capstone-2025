@@ -18,27 +18,44 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.jetbrains.compose.resources.painterResource
 import myapplication.composeapp.generated.resources.Res
 import myapplication.composeapp.generated.resources.care_capsule_logo
 import myapplication.composeapp.generated.resources.login_background
+import com.example.myapplication.viewmodel.LoginViewModel
+import com.example.myapplication.data.AuthState
 
 
 @Composable
 fun LoginScreen(
-    onLogin: () -> Unit = {},
+    onLoginSuccess: () -> Unit = {},
     onForgotPassword: () -> Unit = {},
-    onCreateAccount: () -> Unit = {}
+    onCreateAccount: () -> Unit = {},
+    viewModel: LoginViewModel = viewModel { LoginViewModel() }
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    // Collect state from ViewModel
+    val authState by viewModel.authState.collectAsState()
+    val emailError by viewModel.emailError.collectAsState()
+    val passwordError by viewModel.passwordError.collectAsState()
 
     // Validation (same approach as Create Account)
     val emailOk = remember(email) { email.isBlank() || isValidEmail(email) }
     val passwordOk = remember(password) { password.isBlank() || password.length >= 6 }
 
     val formValid = email.isNotBlank() && emailOk && passwordOk && password.isNotBlank()
+    val isLoading = authState is AuthState.Loading
+
+    // Handle success state
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onLoginSuccess()
+        }
+    }
 
     // 🔹 Use Box to layer background + content
     Box(
@@ -179,10 +196,36 @@ fun LoginScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
+                        // API Error Message
+                        AnimatedVisibility(
+                            visible = authState is AuthState.Error,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = (authState as? AuthState.Error)?.message ?: "An error occurred",
+                                    color = Color(0xFFD32F2F),
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+
+                        if (authState is AuthState.Error) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
                         // SIGN IN BUTTON
                         Button(
-                            onClick = onLogin,
-                            enabled = formValid,
+                            onClick = {
+                                viewModel.login(email, password)
+                            },
+                            enabled = formValid && !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
@@ -192,7 +235,14 @@ fun LoginScreen(
                                 disabledContainerColor = Color(0xFFBDBDBD)
                             )
                         ) {
-                            Text("Sign In", color = Color.White, fontWeight = FontWeight.Bold)
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Text("Sign In", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))

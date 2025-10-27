@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -36,6 +37,10 @@ kotlin {
             implementation("androidx.camera:camera-view:1.3.3")
             // OkHttp for networking
             implementation("com.squareup.okhttp3:okhttp:4.12.0")
+            // Ktor Android engine
+            implementation("io.ktor:ktor-client-android:2.3.7")
+            // Encrypted SharedPreferences for secure storage
+            implementation("androidx.security:security-crypto:1.1.0-alpha06")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
