@@ -6,9 +6,8 @@ dotenv.config();
 async function setupDatabase() {
   console.log('Setting up database schema...');
 
-  // Extract connection details from the pooler URL you provided
   const client = new Client({
-    connectionString: 'process.env.DATABASE_URL',
+    connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
 

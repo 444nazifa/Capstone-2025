@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { supabase, supabaseAdmin } from '../config/supabase';
-import { registerSchema, loginSchema } from '../utils/validation';
-import { RegisterRequest, LoginRequest, AuthResponse, ErrorResponse } from '../types/auth';
+import { registerSchema, loginSchema, updateProfileSchema } from '../utils/validation';
+import { RegisterRequest, LoginRequest, UpdateProfileRequest, AuthResponse, ErrorResponse } from '../types/auth';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -165,6 +166,130 @@ router.post('/login', async (req: Request<{}, AuthResponse | ErrorResponse, Logi
 
   } catch (error) {
     console.error('Login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+router.get('/profile', authenticateToken, async (req: AuthenticatedRequest, res: Response<AuthResponse | ErrorResponse>) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Profile retrieved successfully',
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+        date_of_birth: req.user.date_of_birth
+      }
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+router.put('/profile', authenticateToken, async (req: AuthenticatedRequest, res: Response<AuthResponse | ErrorResponse>) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    const { error, value } = updateProfileSchema.validate(req.body);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: error.details.map(detail => detail.message)
+      });
+    }
+
+    const updateData: Partial<UpdateProfileRequest> = {};
+
+    if (value.name !== undefined) updateData.name = value.name;
+    if (value.email !== undefined) updateData.email = value.email;
+    if (value.date_of_birth !== undefined) updateData.date_of_birth = value.date_of_birth;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields to update'
+      });
+    }
+
+    // If email is being updated, check if it's already in use
+    if (updateData.email && updateData.email !== req.user.email) {
+      const { data: existingUser } = await supabaseAdmin
+        .from('profiles')
+        .select('email')
+        .eq('email', updateData.email)
+        .single();
+
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already in use'
+        });
+      }
+
+      // Update Supabase auth email
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+        req.user.id,
+        { email: updateData.email }
+      );
+
+      if (authError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Failed to update email in authentication system'
+        });
+      }
+    }
+
+    // Update profile in database
+    const { data: updatedProfile, error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update(updateData)
+      .eq('id', req.user.id)
+      .select()
+      .single();
+
+    if (updateError || !updatedProfile) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update profile'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: updatedProfile.id,
+        email: updatedProfile.email,
+        name: updatedProfile.name,
+        date_of_birth: updatedProfile.date_of_birth
+      }
+    });
+
+  } catch (error) {
+    console.error('Update profile error:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error'
