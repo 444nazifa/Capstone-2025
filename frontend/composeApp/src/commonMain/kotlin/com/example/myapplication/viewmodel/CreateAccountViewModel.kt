@@ -54,8 +54,8 @@ class CreateAccountViewModel(
         if (password.isBlank()) {
             _passwordError.value = "Password is required"
             hasError = true
-        } else if (password.length < 6) {
-            _passwordError.value = "Password must be at least 6 characters"
+        } else if (!isValidPassword(password)) {
+            _passwordError.value = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"
             hasError = true
         } else {
             _passwordError.value = null
@@ -102,6 +102,17 @@ class CreateAccountViewModel(
     private fun isValidEmail(email: String): Boolean {
         val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
         return re.matches(email.trim())
+    }
+
+    private fun isValidPassword(password: String): Boolean {
+        if (password.length < 8) return false
+
+        val hasLowercase = password.any { it.isLowerCase() }
+        val hasUppercase = password.any { it.isUpperCase() }
+        val hasDigit = password.any { it.isDigit() }
+        val hasSpecialChar = password.any { it in "@$!%*?&" }
+
+        return hasLowercase && hasUppercase && hasDigit && hasSpecialChar
     }
 
     private fun parseDobOrNull(s: String): LocalDate? {

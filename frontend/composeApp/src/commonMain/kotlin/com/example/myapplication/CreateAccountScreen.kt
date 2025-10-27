@@ -49,6 +49,7 @@ fun CreateAccountScreen(
 
     // --- validation state (mirrors Profile) ---
     val emailOk = remember(email) { email.isBlank() || isValidEmail(email) }
+    val passwordOk = remember(password) { password.isBlank() || isValidPassword(password) }
     val dobParsed = remember(dob) { parseDobOrNull(dob) }
     val dobOk = remember(dob, dobParsed) {
         dob.isNotBlank() && dobParsed != null && isReasonableDob(dobParsed)
@@ -59,7 +60,7 @@ fun CreateAccountScreen(
     val formValid =
         name.isNotBlank() &&
                 email.isNotBlank() && emailOk &&
-                password.length >= 6 &&
+                password.isNotBlank() && passwordOk &&
                 dobOk
 
     val isLoading = authState is AuthState.Loading
@@ -208,7 +209,7 @@ fun CreateAccountScreen(
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                                 keyboardType = KeyboardType.Password
                             ),
-                            isError = password.isNotBlank() && password.length < 6,
+                            isError = password.isNotBlank() && !passwordOk,
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color.Transparent,
@@ -219,12 +220,12 @@ fun CreateAccountScreen(
                         )
                         // Password error
                         AnimatedVisibility(
-                            visible = password.isNotBlank() && password.length < 6,
+                            visible = password.isNotBlank() && !passwordOk,
                             enter = expandVertically(),
                             exit = shrinkVertically()
                         ) {
                             Text(
-                                "Password must be at least 6 characters",
+                                "Password must be at least 8 characters, including uppercase, lowercase, digit, and special character",
                                 color = Color(0xFFD32F2F),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 4.dp)
@@ -363,47 +364,51 @@ fun CreateAccountScreen(
 
 // Email
 private fun isValidEmail(s: String): Boolean {
-    val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-    return re.matches(s.trim())
+    val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z]{2,}$", RegexOption.IGNORE_CASE)
+    return re.matches(s)
 }
 
-// DOB parsing and reasonableness
+// Password
+private fun isValidPassword(password: String): Boolean {
+    if (password.length < 8) return false
+
+    val hasLowercase = password.any { it.isLowerCase() }
+    val hasUppercase = password.any { it.isUpperCase() }
+    val hasDigit = password.any { it.isDigit() }
+    val hasSpecialChar = password.any { it in "@$!%*?&" }
+
+    return hasLowercase && hasUppercase && hasDigit && hasSpecialChar
+}
+
+// Date of Birth
 private fun parseDobOrNull(s: String): LocalDate? {
-    val parts = s.trim().split("/")
-    if (parts.size != 3) return null
-    val (mmS, ddS, yyyyS) = parts
-    val mm = mmS.toIntOrNull() ?: return null
-    val dd = ddS.toIntOrNull() ?: return null
-    val yyyy = yyyyS.toIntOrNull() ?: return null
-    return try { LocalDate(yyyy, mm, dd) } catch (_: Throwable) { null }
-}
+    return try {
+        // MM/DD/YYYY
+        val parts = s.split("/")
+        if (parts.size != 3) return null
 
-private fun isReasonableDob(dob: LocalDate): Boolean {
-    val tz = TimeZone.currentSystemDefault()
-    val today = Clock.System.now().toLocalDateTime(tz).date
-    if (dob >= today) return false
-    val years = today.year - dob.year - if (
-        today.monthNumber < dob.monthNumber ||
-        (today.monthNumber == dob.monthNumber && today.dayOfMonth < dob.dayOfMonth)
-    ) 1 else 0
-    return years in 0..120
-}
+        val month = parts[0].toIntOrNull() ?: return null
+        val day = parts[1].toIntOrNull() ?: return null
+        val year = parts[2].toIntOrNull() ?: return null
 
-// Formats raw input to MM/DD/YYYY, keeping only digits and inserting slashes
-private fun formatDobInput(raw: String): String {
-    val digits = raw.filter { it.isDigit() }.take(8) // MMDDYYYY
-    val sb = StringBuilder()
-    for ((i, c) in digits.withIndex()) {
-        sb.append(c)
-        if (i == 1 || i == 3) sb.append('/')
+        LocalDate(year, month, day)
+    } catch (e: Exception) {
+        null
     }
-    return sb.toString()
 }
 
-@Preview
-@Composable
-fun CreateAccountScreenPreview() {
-    MaterialTheme {
-        CreateAccountScreen()
-    }
+private fun isReasonableDob(date: LocalDate): Boolean {
+    val now = LocalDate.now()
+    val age = now.year - date.year - if (now.dayOfYear < date.dayOfYear) 1 else 0
+
+    return age in 0..120
+}
+
+private fun formatDobInput(dob: String): String {
+    // MM/DD/YYYY
+    val year = dob.substring(6, 10)
+    val month = dob.substring(0, 2)
+    val day = dob.substring(3, 5)
+
+    return "$month/$day/$year"
 }

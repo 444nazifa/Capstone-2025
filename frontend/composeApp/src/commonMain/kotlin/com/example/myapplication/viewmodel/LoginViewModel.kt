@@ -41,7 +41,7 @@ class LoginViewModel(
             _passwordError.value = "Password is required"
             hasError = true
         } else if (password.length < 6) {
-            _passwordError.value = "Password must be at least 6 characters"
+            _passwordError.value = "Password must be at least 8 characters"
             hasError = true
         } else {
             _passwordError.value = null
@@ -68,6 +68,10 @@ class LoginViewModel(
 
     private fun isValidEmail(email: String): Boolean {
         return email.contains("@") && email.contains(".")
+    }
+
+    private fun isValidPassword(password: String): Boolean {
+        return password.length >= 8
     }
 
     fun clearError() {
