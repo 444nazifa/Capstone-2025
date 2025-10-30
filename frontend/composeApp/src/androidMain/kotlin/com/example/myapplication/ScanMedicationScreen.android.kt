@@ -213,9 +213,26 @@ actual suspend fun addMedicationToUserList(request: com.example.myapplication.da
             explicitNulls = false  // Don't serialize null values
         }
 
+        // Ensure we always send a start_date (default to today) so the calendar doesn't show past dots
+        val today = try {
+            // Avoid java.time to keep minSdk compatibility. Use Calendar and Locale to format yyyy-MM-dd
+            val cal = java.util.Calendar.getInstance()
+            val y = cal.get(java.util.Calendar.YEAR)
+            val m = cal.get(java.util.Calendar.MONTH) + 1
+            val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
+            java.util.Locale.US.let { String.format(it, "%04d-%02d-%02d", y, m, d) }
+        } catch (_: Exception) {
+            // fallback to a safe static date if something goes wrong
+            "1970-01-01"
+        }
+
+        val requestToSend = if (request.startDate.isNullOrBlank()) {
+            request.copy(startDate = today)
+        } else request
+
         val jsonBody = json.encodeToString(
             com.example.myapplication.data.CreateMedicationRequest.serializer(),
-            request
+            requestToSend
         )
 
         Log.d("API", "Sending medication request: $jsonBody")
@@ -246,4 +263,3 @@ actual suspend fun addMedicationToUserList(request: com.example.myapplication.da
         false
     }
 }
-
