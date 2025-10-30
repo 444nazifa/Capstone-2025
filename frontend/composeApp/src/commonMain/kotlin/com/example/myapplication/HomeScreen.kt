@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.example.myapplication.viewmodel.HomeViewModel
+import com.example.myapplication.storage.createSecureStorage
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -70,7 +71,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
             )
 
-            // ─────────────── Today's Medication (scrollable) ───────────────
             val scrollState = rememberScrollState()
             Box(
                 modifier = Modifier
@@ -336,6 +336,6 @@ fun MedicationItemStyled(medication: MedicationReminder, onToggle: () -> Unit) {
 @Composable
 fun HomeScreenPreview() {
     CareCapsuleTheme {
-        HomeScreen(HomeViewModel())
+        HomeScreen(HomeViewModel(secureStorage = createSecureStorage()))
     }
 }
