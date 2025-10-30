@@ -11,7 +11,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3015;
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
