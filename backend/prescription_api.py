@@ -199,7 +199,5 @@ if __name__ == '__main__':
     print("Available endpoints:")
     print("  GET  /health - Health check")
     print("  POST /api/scan-qr - Scan QR code from image")
-    print("  POST /api/validate-prescription - Validate prescription data")
-    print("  POST /api/parse-qr-text - Parse QR text directly")
 
     app.run(host='0.0.0.0', port=port, debug=debug)
