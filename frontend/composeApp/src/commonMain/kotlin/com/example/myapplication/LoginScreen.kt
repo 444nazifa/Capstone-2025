@@ -187,7 +187,7 @@ fun LoginScreen(
                             exit = shrinkVertically()
                         ) {
                             Text(
-                                "Password must be at least 6 characters",
+                                "Password must be at least 8 characters",
                                 color = Color(0xFFD32F2F),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 4.dp)
@@ -284,10 +284,10 @@ fun LoginScreen(
 
 // --- helpers ---
 private fun isValidEmail(s: String): Boolean {
-    val re = Regex("^[A-Za-z0-9._%+-]+@[A-ZaZ0-9.-]+\\.[A-ZaZ]{2,}$")
+    val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
     return re.matches(s.trim())
 }
 
 private fun isValidPassword(password: String): Boolean {
-    return password.length >= 6
+    return password.length >= 8
 }
