@@ -77,11 +77,34 @@ export class DailyMedProvider {
 
   async searchByNDC(params: NDCSearchParams): Promise<ApiResponse<MedicationSearchResult[]>> {
     try {
-      const { ndc } = params;
-      
-      const searchUrl = `${this.baseUrl}/services/v2/spls.json`;
+      let { ndc } = params;
+
+      // Remove any existing dashes
+      ndc = ndc.replace(/-/g, '');
+
+      // Convert 11-digit NDC to 10-digit format and add dashes
+      // Format: XXXXX-XXXX-XX (11 digits) -> XXXXX-XXX-XX (10 digits with dashes)
+      let formattedNDC: string;
+      if (ndc.length === 11) {
+        // 5-4-2 format
+        const labeler = ndc.slice(0, 5);
+        const product = ndc.slice(5, 9);
+        const package_code = ndc.slice(9, 11);
+
+        // Remove leading zero from product code to make it 10-digit
+        const trimmedProduct = product.startsWith('0') ? product.slice(1) : product;
+        formattedNDC = `${labeler}-${trimmedProduct}-${package_code}`;
+      } else if (ndc.length === 10) {
+        // Already 10 digits, just add dashes in 5-3-2 format
+        formattedNDC = `${ndc.slice(0, 5)}-${ndc.slice(5, 8)}-${ndc.slice(8, 10)}`;
+      } else {
+        // Try as-is
+        formattedNDC = ndc;
+      }
+
+      const searchUrl = `${this.baseUrl}/spls.json`;
       const searchParams = {
-        ndc: ndc
+        ndc: formattedNDC
       };
 
       const response: AxiosResponse = await axios.get(searchUrl, {
