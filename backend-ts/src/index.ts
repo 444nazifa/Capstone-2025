@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import medicationRoutes from './routes/medication';
+import userMedicationsRoutes from './routes/userMedications';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -37,6 +38,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/medication', medicationRoutes);
+app.use('/api/medications', userMedicationsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
