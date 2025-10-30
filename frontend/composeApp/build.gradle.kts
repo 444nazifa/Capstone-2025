@@ -41,6 +41,8 @@ kotlin {
             implementation("io.ktor:ktor-client-android:2.3.7")
             // Encrypted SharedPreferences for secure storage
             implementation("androidx.security:security-crypto:1.1.0-alpha06")
+            // Coil for image loading
+            implementation("io.coil-kt:coil-compose:2.5.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
