@@ -405,10 +405,11 @@ private fun isReasonableDob(date: LocalDate): Boolean {
 }
 
 private fun formatDobInput(dob: String): String {
-    // MM/DD/YYYY
-    val year = dob.substring(6, 10)
+    // dob is "MMDDYYYY"
+    if (dob.length != 8) return dob
     val month = dob.substring(0, 2)
-    val day = dob.substring(3, 5)
+    val day   = dob.substring(2, 4)
+    val year  = dob.substring(4, 8)
 
     return "$month/$day/$year"
 }
