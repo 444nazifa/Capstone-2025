@@ -289,7 +289,7 @@ actual suspend fun addMedicationToUserList(request: com.example.myapplication.da
                 json(kotlinx.serialization.json.Json {
                     ignoreUnknownKeys = true
                     encodeDefaults = true
-                    explicitNulls = false  // Don't serialize null values
+                    explicitNulls = false
                 })
             }
         }
@@ -300,7 +300,21 @@ actual suspend fun addMedicationToUserList(request: com.example.myapplication.da
             return false
         }
 
-        // Log the request for debugging
+        // Ensure start_date defaults to today if missing
+        val today = try {
+            // Use NSDateFormatter to produce yyyy-MM-dd
+            val formatter = NSDateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.stringFromDate(NSDate())
+        } catch (e: Exception) {
+            // fallback
+            "1970-01-01"
+        }
+
+        val requestToSend = if (request.startDate.isNullOrBlank()) {
+            request.copy(startDate = today)
+        } else request
+
         val json = kotlinx.serialization.json.Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
@@ -308,16 +322,15 @@ actual suspend fun addMedicationToUserList(request: com.example.myapplication.da
         }
         val requestJson = json.encodeToString(
             com.example.myapplication.data.CreateMedicationRequest.serializer(),
-            request
+            requestToSend
         )
         println("Sending medication request: $requestJson")
 
-        // Add medication to user's list
         val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medications/user"
         val response: HttpResponse = client.post(url) {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
-            setBody(request)
+            setBody(requestToSend)
         }
 
         if (response.status.isSuccess()) {
@@ -326,7 +339,7 @@ actual suspend fun addMedicationToUserList(request: com.example.myapplication.da
             true
         } else {
             val errorText = response.bodyAsText()
-            println("Failed to add medication: ${response.status} - $errorText")
+            println("Failed to add medication: ${'$'}{response.status} - ${'$'}errorText")
             println("Request body was: $requestJson")
             false
         }
