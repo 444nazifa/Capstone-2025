@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import medicationRoutes from './routes/medication';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import reminderRoutes from './routes/reminders'; // import the reminders routes
+
 
 dotenv.config();
 
@@ -37,6 +39,8 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/medication', medicationRoutes);
+app.use('/api/reminders', reminderRoutes);
+
 
 app.use(notFoundHandler);
 app.use(errorHandler);
