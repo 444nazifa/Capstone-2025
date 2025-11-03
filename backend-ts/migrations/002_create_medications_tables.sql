@@ -1,23 +1,21 @@
--- Migration: Create medication management tables
-
 CREATE TABLE IF NOT EXISTS user_medications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
 
   medication_name VARCHAR(255) NOT NULL,
   dosage VARCHAR(100) NOT NULL,
-  set_id TEXT, -- DailyMed set ID for linking to medication details
-  ndc VARCHAR(50), -- National Drug Code
+  set_id TEXT,
+  ndc VARCHAR(50),
 
   instructions TEXT,
-  frequency VARCHAR(100) NOT NULL DEFAULT 'Every day', -- e.g., "Every day", "Every 2 days", "As needed"
+  frequency VARCHAR(100) NOT NULL DEFAULT 'Every day',
 
   doctor_name VARCHAR(255),
   pharmacy_name VARCHAR(255),
   pharmacy_location VARCHAR(500),
 
-  quantity_total INTEGER, -- Total pills/doses in prescription
-  quantity_remaining INTEGER, -- Remaining pills/doses
+  quantity_total INTEGER,
+  quantity_remaining INTEGER,
   supply_remaining_percentage DECIMAL(5,2) GENERATED ALWAYS AS (
     CASE
       WHEN quantity_total > 0 THEN (quantity_remaining::DECIMAL / quantity_total::DECIMAL) * 100
@@ -25,13 +23,13 @@ CREATE TABLE IF NOT EXISTS user_medications (
     END
   ) STORED,
   next_refill_date DATE,
-  refill_reminder_days INTEGER DEFAULT 7, -- Days before refill to send reminder
+  refill_reminder_days INTEGER DEFAULT 7,
 
   is_active BOOLEAN DEFAULT true,
   start_date DATE DEFAULT CURRENT_DATE,
   end_date DATE,
 
-  color VARCHAR(7) DEFAULT '#4CAF50', -- Hex color for UI display
+  color VARCHAR(7) DEFAULT '#4CAF50',
 
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -44,8 +42,8 @@ CREATE TABLE IF NOT EXISTS medication_schedules (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_medication_id UUID NOT NULL REFERENCES user_medications(id) ON DELETE CASCADE,
 
-  scheduled_time TIME NOT NULL, -- e.g., "08:00:00", "20:00:00"
-  days_of_week INTEGER[] DEFAULT ARRAY[0,1,2,3,4,5,6], -- [0=Sun, 1=Mon, ..., 6=Sat]
+  scheduled_time TIME NOT NULL,
+  days_of_week INTEGER[] DEFAULT ARRAY[0,1,2,3,4,5,6],
 
   is_enabled BOOLEAN DEFAULT true,
 
@@ -66,7 +64,7 @@ CREATE TABLE IF NOT EXISTS medication_history (
 
   scheduled_at TIMESTAMP WITH TIME ZONE NOT NULL,
   taken_at TIMESTAMP WITH TIME ZONE,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'taken', 'skipped', 'missed', 'pending'
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
 
   notes TEXT,
 
@@ -80,7 +78,7 @@ CREATE TABLE IF NOT EXISTS drug_interactions (
   medication_a_id UUID NOT NULL REFERENCES user_medications(id) ON DELETE CASCADE,
   medication_b_id UUID NOT NULL REFERENCES user_medications(id) ON DELETE CASCADE,
 
-  severity VARCHAR(20) NOT NULL, -- 'mild', 'moderate', 'severe'
+  severity VARCHAR(20) NOT NULL,
   description TEXT NOT NULL,
   recommendation TEXT,
 

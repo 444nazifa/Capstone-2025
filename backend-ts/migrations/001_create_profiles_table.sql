@@ -1,6 +1,3 @@
--- Migration: Create profiles table
--- This should match your existing Supabase profiles table
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS profiles (
