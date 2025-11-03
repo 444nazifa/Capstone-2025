@@ -210,27 +210,25 @@ fun ScanMedicationScreen(
                     val success = addMedicationToUserList(request)
                     isProcessing = false
                     if (success) {
-                        // Show success message
                         snackbarHostState.showSnackbar(
                             message = "✓ Medication added successfully!",
                             duration = SnackbarDuration.Short
                         )
 
-                        // Clear UI state
                         showAddBottomSheet = false
                         selectedMedication = null
                         searchResults = null
                         searchQuery = ""
                         showManualEntry = false
 
-                        // Trigger refresh callback
                         onMedicationAdded()
                     } else {
                         errorMessage = "Failed to add medication. Please try again."
                         showErrorDialog = true
                     }
                 }
-            }
+            },
+            isLoading = isProcessing
         )
     }
 }

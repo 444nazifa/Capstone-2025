@@ -303,15 +303,16 @@ class MedicationApiService private constructor(
         }
     }
 
-    // NOTE: Not automatically called. Called from PushNotificationManager when enabling notifications.
     suspend fun registerDeviceToken(
-        token: String,
+        authToken: String,
+        deviceToken: String,
         platform: String
     ) {
         val response = client.post("$baseUrl/api/device-tokens") {
             contentType(ContentType.Application.Json)
+            header("Authorization", "Bearer $authToken")
             setBody(mapOf(
-                "token" to token,
+                "token" to deviceToken,
                 "platform" to platform
             ))
         }
@@ -321,8 +322,10 @@ class MedicationApiService private constructor(
         }
     }
 
-    suspend fun unregisterDeviceToken(token: String) {
-        val response = client.delete("$baseUrl/api/device-tokens/$token")
+    suspend fun unregisterDeviceToken(authToken: String, deviceToken: String) {
+        val response = client.delete("$baseUrl/api/device-tokens/$deviceToken") {
+            header("Authorization", "Bearer $authToken")
+        }
 
         if (!response.status.isSuccess()) {
             throw Exception("Failed to unregister device token: ${response.status}")

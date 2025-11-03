@@ -10,12 +10,12 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.example.myapplication.api.MedicationApiService
+import com.example.myapplication.storage.createSecureStorage
+import com.example.myapplication.storage.getToken
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-
-// NOTE: Not automatically called. Call requestPermissionAndRegister() to enable notifications.
 
 class PushNotificationManager private constructor(
     private val context: Context
@@ -39,6 +39,7 @@ class PushNotificationManager private constructor(
     }
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val secureStorage = createSecureStorage()
     private var permissionCallback: ((Boolean) -> Unit)? = null
     private var permissionLauncher: ActivityResultLauncher<String>? = null
 
@@ -100,13 +101,14 @@ class PushNotificationManager private constructor(
 
     suspend fun registerTokenWithBackend(token: String) {
         try {
-            // Get API service instance
+            val authToken = secureStorage.getToken()
+            if (authToken.isNullOrEmpty()) {
+                throw Exception("Not authenticated - no auth token found")
+            }
+
             val apiService = MedicationApiService.getInstance(context)
+            apiService.registerDeviceToken(authToken, token, "android")
 
-            // Send token to backend
-            apiService.registerDeviceToken(token, "android")
-
-            // Save registration state
             prefs.edit().apply {
                 putBoolean(KEY_TOKEN_REGISTERED, true)
                 putString(KEY_LAST_TOKEN, token)
@@ -122,12 +124,16 @@ class PushNotificationManager private constructor(
 
     suspend fun unregisterTokenFromBackend() {
         try {
+            val authToken = secureStorage.getToken()
+            if (authToken.isNullOrEmpty()) {
+                throw Exception("Not authenticated - no auth token found")
+            }
+
             val token = getToken() ?: return
 
             val apiService = MedicationApiService.getInstance(context)
-            apiService.unregisterDeviceToken(token)
+            apiService.unregisterDeviceToken(authToken, token)
 
-            // Clear registration state
             prefs.edit().apply {
                 putBoolean(KEY_TOKEN_REGISTERED, false)
                 remove(KEY_LAST_TOKEN)

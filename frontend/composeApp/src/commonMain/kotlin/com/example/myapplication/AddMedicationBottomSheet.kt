@@ -35,7 +35,8 @@ data class ScheduleDetail(
 fun AddMedicationBottomSheet(
     medication: MedicationSearchResult,
     onDismiss: () -> Unit,
-    onSave: (CreateMedicationRequest) -> Unit
+    onSave: (CreateMedicationRequest) -> Unit,
+    isLoading: Boolean = false
 ) {
     var dosage by remember { mutableStateOf("") }
     var instructions by remember { mutableStateOf("") }
@@ -50,6 +51,7 @@ fun AddMedicationBottomSheet(
     var showTimePickerDialog by remember { mutableStateOf(false) }
     var selectedColor by remember { mutableStateOf("#4CAF50") }
     var expandedScheduleIndex by remember { mutableStateOf<Int?>(null) }
+    var isSaving by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
@@ -320,7 +322,8 @@ fun AddMedicationBottomSheet(
             // Save button
             Button(
                 onClick = {
-                    if (dosage.isNotBlank()) {
+                    if (dosage.isNotBlank() && !isSaving && !isLoading) {
+                        isSaving = true
                         val request = CreateMedicationRequest(
                             medicationName = medication.title,
                             dosage = dosage,
@@ -352,11 +355,19 @@ fun AddMedicationBottomSheet(
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                 shape = RoundedCornerShape(12.dp),
-                enabled = dosage.isNotBlank()
+                enabled = dosage.isNotBlank() && !isSaving && !isLoading
             ) {
-                Icon(Icons.Default.Check, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Medication", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (isSaving || isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Default.Check, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Medication", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
             }
         }
     }
