@@ -21,9 +21,12 @@ import com.example.myapplication.data.UserSession
 import com.example.myapplication.storage.createSecureStorage
 
 @Composable
-fun App() {
+fun App(
+    onEnableNotifications: suspend () -> Boolean = { false },
+    onDisableNotifications: suspend () -> Boolean = { false },
+    isNotificationsEnabled: () -> Boolean = { false }
+) {
     CareCapsuleTheme {
-        // Observe current user
         val currentUser by UserSession.currentUser.collectAsState()
         val initialScreen = if (currentUser != null) "main" else "login"
 
@@ -58,15 +61,16 @@ fun App() {
                     onLoginClick = { currentScreen = "login" }
                 )
 
-                // Main app (your bottom navigation)
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
                     medicationViewModel = medicationViewModel,
                     scanMedicationViewModel = scanMedicationViewModel,
                     onSignOut = {
-                        // Ensure the session is cleared first, then navigate to login.
                         UserSession.logout()
-                    }
+                    },
+                    onEnableNotifications = onEnableNotifications,
+                    onDisableNotifications = onDisableNotifications,
+                    isNotificationsEnabled = isNotificationsEnabled
                 )
             }
         }
@@ -78,7 +82,10 @@ fun MainApp(
     homeViewModel: HomeViewModel,
     medicationViewModel: MedicationViewModel,
     scanMedicationViewModel: ScanMedicationViewModel,
-    onSignOut: () -> Unit = {}
+    onSignOut: () -> Unit = {},
+    onEnableNotifications: suspend () -> Boolean = { false },
+    onDisableNotifications: suspend () -> Boolean = { false },
+    isNotificationsEnabled: () -> Boolean = { false }
 ) {
     var selectedTab by remember { mutableStateOf("home") }
 
@@ -133,7 +140,10 @@ fun MainApp(
             )
             "profile" -> ProfileScreen(
                 modifier = Modifier.padding(innerPadding),
-                onSignOut = onSignOut
+                onSignOut = onSignOut,
+                onEnableNotifications = onEnableNotifications,
+                onDisableNotifications = onDisableNotifications,
+                isNotificationsEnabled = isNotificationsEnabled
             )
         }
     }
