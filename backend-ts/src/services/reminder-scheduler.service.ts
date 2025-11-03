@@ -56,28 +56,27 @@ class ReminderSchedulerService {
   private async checkDueReminders(): Promise<void> {
     try {
       const now = new Date();
-      const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
+      const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
+      const currentDayOfWeek = now.getDay();
 
-      // Get due schedules from medication_schedules
       const { data: schedules, error: schedulesError } = await supabaseAdmin
         .from('medication_schedules')
         .select(`
           id,
-          user_id,
-          medication_id,
-          time,
-          enabled,
+          user_medication_id,
+          scheduled_time,
+          days_of_week,
+          is_enabled,
           user_medications!inner (
             id,
-            name,
+            user_id,
+            medication_name,
             dosage,
             is_active
           )
         `)
-        .eq('enabled', true)
-        .eq('user_medications.is_active', true)
-        .lte('time', now.toISOString())
-        .gte('time', oneMinuteAgo.toISOString());
+        .eq('is_enabled', true)
+        .eq('user_medications.is_active', true);
 
       if (schedulesError) {
         console.error('Error fetching schedules:', schedulesError);
@@ -85,18 +84,39 @@ class ReminderSchedulerService {
       }
 
       if (!schedules || schedules.length === 0) {
-        console.log('✅ No due reminders at', now.toISOString());
+        console.log('✅ No schedules found');
         return;
       }
 
-      // Filter out reminders that have already been taken/skipped
       const remindersToSend = [];
+      const today = now.toISOString().split('T')[0];
+
       for (const schedule of schedules) {
+        const scheduledTime = schedule.scheduled_time.substring(0, 5);
+
+        if (!schedule.days_of_week.includes(currentDayOfWeek)) {
+          continue;
+        }
+
+        if (scheduledTime !== currentTime) {
+          continue;
+        }
+
+        const medication = Array.isArray(schedule.user_medications)
+          ? schedule.user_medications[0]
+          : schedule.user_medications;
+
+        if (!medication) continue;
+
+        const scheduledAt = `${today}T${schedule.scheduled_time}`;
+
         const { data: history, error: historyError } = await supabaseAdmin
           .from('medication_history')
           .select('id')
-          .eq('medication_id', schedule.medication_id)
-          .eq('scheduled_time', schedule.time)
+          .eq('user_medication_id', schedule.user_medication_id)
+          .eq('medication_schedule_id', schedule.id)
+          .gte('scheduled_at', `${today}T00:00:00`)
+          .lte('scheduled_at', `${today}T23:59:59`)
           .in('status', ['taken', 'skipped'])
           .limit(1);
 
@@ -105,9 +125,8 @@ class ReminderSchedulerService {
           continue;
         }
 
-        // If no history found, reminder needs to be sent
         if (!history || history.length === 0) {
-          remindersToSend.push(schedule);
+          remindersToSend.push({ schedule, medication, scheduledAt });
         }
       }
 
@@ -118,32 +137,22 @@ class ReminderSchedulerService {
 
       console.log(`📬 Found ${remindersToSend.length} due reminder(s)`);
 
-      // Send notifications for each due reminder
-      for (const reminder of remindersToSend) {
+      for (const { schedule, medication, scheduledAt } of remindersToSend) {
         try {
-          const medication = Array.isArray(reminder.user_medications)
-            ? reminder.user_medications[0]
-            : reminder.user_medications;
-
-          if (!medication) {
-            console.warn(`⚠️  No medication found for schedule ${reminder.id}`);
-            continue;
-          }
-
           const success = await notificationService.sendMedicationReminder(
-            reminder.user_id,
+            medication.user_id,
             {
-              id: reminder.medication_id,
-              name: medication.name,
+              id: medication.id,
+              name: medication.medication_name,
               dosage: medication.dosage
             },
-            reminder.id
+            schedule.id
           );
 
           if (success) {
-            console.log(`✅ Reminder sent for medication: ${medication.name}`);
+            console.log(`✅ Reminder sent for medication: ${medication.medication_name}`);
           } else {
-            console.log(`⚠️  No devices to notify for user: ${reminder.user_id}`);
+            console.log(`⚠️  No devices to notify for user: ${medication.user_id}`);
           }
         } catch (error) {
           console.error(`❌ Error sending reminder:`, error);
