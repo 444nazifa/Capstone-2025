@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    id("com.google.gms.google-services")
 }
 
 kotlin {
@@ -43,6 +44,9 @@ kotlin {
             implementation("androidx.security:security-crypto:1.1.0-alpha06")
             // Coil for image loading
             implementation("io.coil-kt:coil-compose:2.5.0")
+            // Firebase Cloud Messaging
+            implementation(project.dependencies.platform("com.google.firebase:firebase-bom:33.5.1"))
+            implementation("com.google.firebase:firebase-messaging-ktx")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

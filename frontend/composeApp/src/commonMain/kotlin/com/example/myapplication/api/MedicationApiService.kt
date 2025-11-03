@@ -9,9 +9,22 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-class MedicationApiService(
+class MedicationApiService private constructor(
     private val baseUrl: String = "https://backend-ts-theta.vercel.app"
 ) {
+    companion object {
+        @Volatile
+        private var instance: MedicationApiService? = null
+
+        fun getInstance(context: Any? = null): MedicationApiService {
+            return instance ?: synchronized(this) {
+                instance ?: MedicationApiService().also {
+                    instance = it
+                }
+            }
+        }
+    }
+
     private val client = HttpClient {
         install(ContentNegotiation) {
             json(Json {
@@ -287,6 +300,32 @@ class MedicationApiService(
             }
         } catch (e: Exception) {
             Result.failure(Exception("Network error: ${e.message}"))
+        }
+    }
+
+    // NOTE: Not automatically called. Called from PushNotificationManager when enabling notifications.
+    suspend fun registerDeviceToken(
+        token: String,
+        platform: String
+    ) {
+        val response = client.post("$baseUrl/api/device-tokens") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf(
+                "token" to token,
+                "platform" to platform
+            ))
+        }
+
+        if (!response.status.isSuccess()) {
+            throw Exception("Failed to register device token: ${response.status}")
+        }
+    }
+
+    suspend fun unregisterDeviceToken(token: String) {
+        val response = client.delete("$baseUrl/api/device-tokens/$token")
+
+        if (!response.status.isSuccess()) {
+            throw Exception("Failed to unregister device token: ${response.status}")
         }
     }
 
