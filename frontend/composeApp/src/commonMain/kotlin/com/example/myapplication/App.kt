@@ -21,49 +21,47 @@ import com.example.myapplication.ForgotPasswordScreen
 @Composable
 fun App() {
     CareCapsuleTheme {
-        // Observe current user
         val currentUser by UserSession.currentUser.collectAsState()
-        val initialScreen = if (currentUser != null) "main" else "login"
 
-        var currentScreen by remember { mutableStateOf(initialScreen) }
+        // Start at login by default; the session watcher will move you to main if logged in.
+        var currentScreen by remember { mutableStateOf("login") }
+
         val homeViewModel = remember { HomeViewModel() }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
-        // Watch for session changes and redirect to login when the user is signed out
+        // 🔐 Session-driven routing with guards in both directions
         LaunchedEffect(currentUser) {
-            if (currentUser == null) {
+            if (currentUser == null && currentScreen == "main") {
+                // user signed out → force to login
                 currentScreen = "login"
-            } else {
+            } else if (currentUser != null && currentScreen == "login") {
+                // user signed in → go to main (but don't hijack forgot/create screens)
                 currentScreen = "main"
             }
         }
 
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
-
-                // Login + Forgot Password Screen
                 "login" -> LoginScreen(
-                    onLoginSuccess = { currentScreen = "main" },
-                    onForgotPassword = { currentScreen = "forgotPassword" }, // navigate to forgot password page
+                    onLoginSuccess = { /* session watcher will flip to main */ },
+                    onForgotPassword = { currentScreen = "forgotPassword" },
                     onCreateAccount = { currentScreen = "createAccount" }
                 )
 
-                // Create Account Screen
                 "createAccount" -> CreateAccountScreen(
-                    onSignUpSuccess = { currentScreen = "main" },
+                    onSignUpSuccess = { /* session watcher will flip to main */ },
                     onLoginClick = { currentScreen = "login" }
                 )
 
                 "forgotPassword" -> ForgotPasswordScreen(
-                    onBackToLogin = { currentScreen = "login" } // Go back to login
+                    onBackToLogin = { currentScreen = "login" }
                 )
 
-                // Main app (your bottom navigation)
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
                     scanMedicationViewModel = scanMedicationViewModel,
                     onSignOut = {
-                        // Ensure the session is cleared first, then navigate to login.
+                        // ❗ Don’t set currentScreen here—let the session watcher handle it.
                         UserSession.logout()
                     }
                 )
