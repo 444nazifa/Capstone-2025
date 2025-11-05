@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import medicationRoutes from './routes/medication';
 import userMedicationsRoutes from './routes/userMedications';
 import deviceTokenRoutes from './routes/device-token.routes';
+import reminderRoutes from './routes/reminders';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import firebaseService from './services/firebase.service';
 import reminderScheduler from './services/reminder-scheduler.service';
@@ -67,6 +68,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/medication', medicationRoutes);
 app.use('/api/medications', userMedicationsRoutes);
 app.use('/api/device-tokens', deviceTokenRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
