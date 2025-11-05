@@ -15,8 +15,8 @@ import com.example.myapplication.theme.CareCapsuleTheme
 import com.example.myapplication.viewmodel.HomeViewModel
 import com.example.myapplication.viewmodel.ScanMedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.data.UserSession
+import com.example.myapplication.ForgotPasswordScreen
 
 @Composable
 fun App() {
@@ -41,17 +41,21 @@ fun App() {
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
 
-                // Login screen first
+                // Login + Forgot Password Screen
                 "login" -> LoginScreen(
-                    onLoginSuccess = { },
-                    onForgotPassword = { /* later feature */ },
-                    onCreateAccount = { currentScreen = "createAccount" } // Go to Create Account
+                    onLoginSuccess = { currentScreen = "main" },
+                    onForgotPassword = { currentScreen = "forgotPassword" }, // navigate to forgot password page
+                    onCreateAccount = { currentScreen = "createAccount" }
                 )
 
                 // Create Account Screen
                 "createAccount" -> CreateAccountScreen(
                     onSignUpSuccess = { currentScreen = "main" },
                     onLoginClick = { currentScreen = "login" }
+                )
+
+                "forgotPassword" -> ForgotPasswordScreen(
+                    onBackToLogin = { currentScreen = "login" } // Go back to login
                 )
 
                 // Main app (your bottom navigation)
@@ -111,7 +115,7 @@ fun MainApp(
     ) { innerPadding ->
         when (selectedTab) {
             "home" -> HomeScreen(homeViewModel)
-            "medications" -> MedicationScreen(modifier = Modifier.padding(innerPadding))
+            "medications" -> MedicationsScreen(modifier = Modifier.padding(innerPadding))
             "scan" ->    ScanMedicationScreen(
                 viewModel = scanMedicationViewModel,
                 showBackButton = false, // ← No back button
