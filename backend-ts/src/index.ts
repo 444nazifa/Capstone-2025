@@ -34,8 +34,10 @@ app.use(express.urlencoded({ extended: true }));
 // Initialize Firebase for push notifications
 firebaseService.initializeFirebase();
 
-// Start medication reminder scheduler
-reminderScheduler.startScheduler();
+// Only start scheduler if not on Vercel (for local development)
+if (!process.env.VERCEL) {
+  reminderScheduler.startScheduler();
+}
 
 app.get('/health', (req, res) => {
   res.json({
@@ -43,6 +45,22 @@ app.get('/health', (req, res) => {
     message: 'Server is running',
     timestamp: new Date().toISOString()
   });
+});
+
+app.get('/api/cron/check-reminders', async (req, res) => {
+  try {
+    const cronSecret = req.query.secret || req.headers.authorization?.replace('Bearer ', '');
+
+    if (cronSecret !== process.env.CRON_SECRET) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    await reminderScheduler.triggerCheck();
+    res.json({ success: true, message: 'Reminder check completed' });
+  } catch (error) {
+    console.error('Cron error:', error);
+    res.status(500).json({ error: 'Failed to check reminders' });
+  }
 });
 
 app.use('/api/auth', authRoutes);
