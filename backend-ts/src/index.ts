@@ -5,12 +5,13 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import medicationRoutes from './routes/medication';
+import userMedicationsRoutes from './routes/userMedications';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3015;
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -37,6 +38,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/medication', medicationRoutes);
+app.use('/api/medications', userMedicationsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -13,10 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.theme.CareCapsuleTheme
 import com.example.myapplication.viewmodel.HomeViewModel
+import com.example.myapplication.viewmodel.MedicationViewModel
 import com.example.myapplication.viewmodel.ScanMedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.data.UserSession
+import com.example.myapplication.storage.createSecureStorage
 
 @Composable
 fun App() {
@@ -26,7 +28,9 @@ fun App() {
         val initialScreen = if (currentUser != null) "main" else "login"
 
         var currentScreen by remember { mutableStateOf(initialScreen) }
-        val homeViewModel = remember { HomeViewModel() }
+        val secureStorage = remember { createSecureStorage() }
+        val homeViewModel = remember { HomeViewModel(secureStorage = secureStorage) }
+        val medicationViewModel = remember { MedicationViewModel(secureStorage = secureStorage) }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
         // Watch for session changes and redirect to login when the user is signed out
@@ -57,6 +61,7 @@ fun App() {
                 // Main app (your bottom navigation)
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
+                    medicationViewModel = medicationViewModel,
                     scanMedicationViewModel = scanMedicationViewModel,
                     onSignOut = {
                         // Ensure the session is cleared first, then navigate to login.
@@ -71,6 +76,7 @@ fun App() {
 @Composable
 fun MainApp(
     homeViewModel: HomeViewModel,
+    medicationViewModel: MedicationViewModel,
     scanMedicationViewModel: ScanMedicationViewModel,
     onSignOut: () -> Unit = {}
 ) {
@@ -111,13 +117,18 @@ fun MainApp(
     ) { innerPadding ->
         when (selectedTab) {
             "home" -> HomeScreen(homeViewModel)
-            "medications" -> MedicationScreen(modifier = Modifier.padding(innerPadding))
+            "medications" -> MedicationScreen(medicationViewModel, modifier = Modifier.padding(innerPadding))
             "scan" ->    ScanMedicationScreen(
                 viewModel = scanMedicationViewModel,
                 showBackButton = false, // ← No back button
                 onBarcodeScanned = { barcode ->
                     // print the scanned barcode
                     println("Scanned barcode: $barcode")
+                },
+                onMedicationAdded = {
+                    // Refresh both home and medication screens
+                    homeViewModel.loadMedications()
+                    medicationViewModel.loadMedicationData()
                 }
             )
             "profile" -> ProfileScreen(
