@@ -22,6 +22,8 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import platform.darwin.DISPATCH_QUEUE_PRIORITY_DEFAULT
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_global_queue
@@ -195,9 +197,7 @@ actual fun captureImage(onImageCaptured: (ByteArray) -> Unit) {
 actual suspend fun sendImageToBackend(imageData: ByteArray): String? {
     return try {
         val client = HttpClient()
-
-        // Replace with your actual backend URL
-        val url = "https://your-api.com/api/scan-medication"
+        val url = "${com.example.myapplication.api.ApiConfig.PYTHON_BACKEND_URL}/api/scan-qr"
 
         val response: HttpResponse = client.submitFormWithBinaryData(
             url = url,
@@ -211,10 +211,22 @@ actual suspend fun sendImageToBackend(imageData: ByteArray): String? {
 
         if (response.status.isSuccess()) {
             val responseText = response.bodyAsText()
-            // Parse JSON response - adjust based on your API
-            // For now, mock response:
-            "12345678901"
+            println("Scan QR Response: $responseText")
+
+            try {
+                if (responseText.contains("\"qr_detected\":true") || responseText.contains("\"qr_detected\": true")) {
+                    val ndcRegex = Regex("\"ndc\"\\s*:\\s*\"([^\"]+)\"")
+                    val match = ndcRegex.find(responseText)
+                    match?.groupValues?.get(1) ?: "QR code detected"
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                println("JSON parsing error: ${e.message}")
+                null
+            }
         } else {
+            println("Image upload failed: ${response.status}")
             null
         }
     } catch (e: Exception) {
@@ -223,27 +235,116 @@ actual suspend fun sendImageToBackend(imageData: ByteArray): String? {
     }
 }
 
-actual suspend fun sendBarcodeToBackend(barcode: String): String? {
+actual suspend fun searchMedicationsByNDC(ndc: String): com.example.myapplication.data.MedicationSearchResponse? {
     return try {
-        val client = HttpClient()
+        val client = HttpClient {
+            install(ContentNegotiation) {
+                json(kotlinx.serialization.json.Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                })
+            }
+        }
+        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medication/search/ndc?ndc=$ndc"
 
-        // Replace with your actual backend URL
-        val url = "https://your-api.com/api/verify-barcode"
+        val response: HttpResponse = client.get(url)
 
+        if (response.status.isSuccess()) {
+            val responseText = response.bodyAsText()
+            println("NDC Search Response: $responseText")
+
+            try {
+                val json = kotlinx.serialization.json.Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                }
+                json.decodeFromString<com.example.myapplication.data.MedicationSearchResponse>(responseText)
+            } catch (e: Exception) {
+                println("JSON parsing error: ${e.message}")
+                com.example.myapplication.data.MedicationSearchResponse(
+                    success = false,
+                    error = "Failed to parse response"
+                )
+            }
+        } else {
+            println("NDC search failed: ${response.status}")
+            com.example.myapplication.data.MedicationSearchResponse(
+                success = false,
+                error = "Search failed: ${response.status}"
+            )
+        }
+    } catch (e: Exception) {
+        println("NDC search failed: ${e.message}")
+        com.example.myapplication.data.MedicationSearchResponse(
+            success = false,
+            error = e.message ?: "Network error"
+        )
+    }
+}
+
+actual suspend fun addMedicationToUserList(request: com.example.myapplication.data.CreateMedicationRequest): Boolean {
+    return try {
+        val client = HttpClient {
+            install(ContentNegotiation) {
+                json(kotlinx.serialization.json.Json {
+                    ignoreUnknownKeys = true
+                    encodeDefaults = true
+                    explicitNulls = false
+                })
+            }
+        }
+
+        // Get the auth token from UserSession
+        val token = com.example.myapplication.data.UserSession.authToken.value ?: run {
+            println("No auth token available")
+            return false
+        }
+
+        // Ensure start_date defaults to today if missing
+        val today = try {
+            // Use NSDateFormatter to produce yyyy-MM-dd
+            val formatter = NSDateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.stringFromDate(NSDate())
+        } catch (e: Exception) {
+            // fallback
+            "1970-01-01"
+        }
+
+        val requestToSend = if (request.startDate.isNullOrBlank()) {
+            request.copy(startDate = today)
+        } else request
+
+        val json = kotlinx.serialization.json.Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            explicitNulls = false
+        }
+        val requestJson = json.encodeToString(
+            com.example.myapplication.data.CreateMedicationRequest.serializer(),
+            requestToSend
+        )
+        println("Sending medication request: $requestJson")
+
+        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medications/user"
         val response: HttpResponse = client.post(url) {
+            header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
-            setBody("""{"barcode": "$barcode"}""")
+            setBody(requestToSend)
         }
 
         if (response.status.isSuccess()) {
             val responseText = response.bodyAsText()
-            // Parse response and return result
-            barcode
+            println("Medication added successfully: $responseText")
+            true
         } else {
-            null
+            val errorText = response.bodyAsText()
+            println("Failed to add medication: ${'$'}{response.status} - ${'$'}errorText")
+            println("Request body was: $requestJson")
+            false
         }
     } catch (e: Exception) {
-        println("Barcode verification failed: ${e.message}")
-        null
+        println("Failed to add medication: ${e.message}")
+        false
     }
 }

@@ -13,20 +13,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.theme.CareCapsuleTheme
 import com.example.myapplication.viewmodel.HomeViewModel
+import com.example.myapplication.viewmodel.MedicationViewModel
 import com.example.myapplication.viewmodel.ScanMedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.example.myapplication.data.UserSession
-import com.example.myapplication.ForgotPasswordScreen
+import com.example.myapplication.storage.createSecureStorage
 
 @Composable
-fun App() {
+fun App(
+    onEnableNotifications: suspend () -> Boolean = { false },
+    onDisableNotifications: suspend () -> Boolean = { false },
+    isNotificationsEnabled: () -> Boolean = { false }
+) {
     CareCapsuleTheme {
         val currentUser by UserSession.currentUser.collectAsState()
 
-        // Start at login by default; the session watcher will move you to main if logged in.
-        var currentScreen by remember { mutableStateOf("login") }
-
-        val homeViewModel = remember { HomeViewModel() }
+        var currentScreen by remember { mutableStateOf(initialScreen) }
+        val secureStorage = remember { createSecureStorage() }
+        val homeViewModel = remember { HomeViewModel(secureStorage = secureStorage) }
+        val medicationViewModel = remember {
+            MedicationViewModel(
+                secureStorage = secureStorage,
+                onMedicationDeleted = {
+                    homeViewModel.loadMedications()
+                }
+            )
+        }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
         // 🔐 Session-driven routing with guards in both directions
@@ -43,9 +55,10 @@ fun App() {
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
                 "login" -> LoginScreen(
-                    onLoginSuccess = { /* session watcher will flip to main */ },
-                    onForgotPassword = { currentScreen = "forgotPassword" },
-                    onCreateAccount = { currentScreen = "createAccount" }
+                    onLoginSuccess = { },
+                    onForgotPassword = { /* later feature */ },
+                    onCreateAccount = { currentScreen = "createAccount" }, // Go to Create Account
+                    onReregisterNotifications = onEnableNotifications
                 )
 
                 "createAccount" -> CreateAccountScreen(
@@ -53,17 +66,16 @@ fun App() {
                     onLoginClick = { currentScreen = "login" }
                 )
 
-                "forgotPassword" -> ForgotPasswordScreen(
-                    onBackToLogin = { currentScreen = "login" }
-                )
-
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
+                    medicationViewModel = medicationViewModel,
                     scanMedicationViewModel = scanMedicationViewModel,
                     onSignOut = {
-                        // ❗ Don’t set currentScreen here—let the session watcher handle it.
                         UserSession.logout()
-                    }
+                    },
+                    onEnableNotifications = onEnableNotifications,
+                    onDisableNotifications = onDisableNotifications,
+                    isNotificationsEnabled = isNotificationsEnabled
                 )
             }
         }
@@ -73,8 +85,12 @@ fun App() {
 @Composable
 fun MainApp(
     homeViewModel: HomeViewModel,
+    medicationViewModel: MedicationViewModel,
     scanMedicationViewModel: ScanMedicationViewModel,
-    onSignOut: () -> Unit = {}
+    onSignOut: () -> Unit = {},
+    onEnableNotifications: suspend () -> Boolean = { false },
+    onDisableNotifications: suspend () -> Boolean = { false },
+    isNotificationsEnabled: () -> Boolean = { false }
 ) {
     var selectedTab by remember { mutableStateOf("home") }
 
@@ -113,18 +129,26 @@ fun MainApp(
     ) { innerPadding ->
         when (selectedTab) {
             "home" -> HomeScreen(homeViewModel)
-            "medications" -> MedicationsScreen(modifier = Modifier.padding(innerPadding))
+            "medications" -> MedicationScreen(medicationViewModel, modifier = Modifier.padding(innerPadding))
             "scan" ->    ScanMedicationScreen(
                 viewModel = scanMedicationViewModel,
                 showBackButton = false, // ← No back button
                 onBarcodeScanned = { barcode ->
                     // print the scanned barcode
                     println("Scanned barcode: $barcode")
+                },
+                onMedicationAdded = {
+                    // Refresh both home and medication screens
+                    homeViewModel.loadMedications()
+                    medicationViewModel.loadMedicationData()
                 }
             )
             "profile" -> ProfileScreen(
                 modifier = Modifier.padding(innerPadding),
-                onSignOut = onSignOut
+                onSignOut = onSignOut,
+                onEnableNotifications = onEnableNotifications,
+                onDisableNotifications = onDisableNotifications,
+                isNotificationsEnabled = isNotificationsEnabled
             )
         }
     }
