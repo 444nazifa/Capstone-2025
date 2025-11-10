@@ -244,6 +244,12 @@ build/
 # Supabase
 .supabase/
 
+# Firebase
+google-services.json
+GoogleService-Info.plist
+*firebase-adminsdk*.json
+firebase-admin-key.json
+
 # Vercel
 .vercel
 
