@@ -59,7 +59,8 @@ fun App(
                 "login" -> LoginScreen(
                     onLoginSuccess = { },
                     onForgotPassword = { /* later feature */ },
-                    onCreateAccount = { currentScreen = "createAccount" } // Go to Create Account
+                    onCreateAccount = { currentScreen = "createAccount" }, // Go to Create Account
+                    onReregisterNotifications = onEnableNotifications
                 )
 
                 // Create Account Screen
