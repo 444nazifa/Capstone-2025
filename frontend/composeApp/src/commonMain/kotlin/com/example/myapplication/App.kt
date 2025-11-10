@@ -16,7 +16,6 @@ import com.example.myapplication.viewmodel.HomeViewModel
 import com.example.myapplication.viewmodel.MedicationViewModel
 import com.example.myapplication.viewmodel.ScanMedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.data.UserSession
 import com.example.myapplication.storage.createSecureStorage
 
@@ -28,7 +27,6 @@ fun App(
 ) {
     CareCapsuleTheme {
         val currentUser by UserSession.currentUser.collectAsState()
-        val initialScreen = if (currentUser != null) "main" else "login"
 
         var currentScreen by remember { mutableStateOf(initialScreen) }
         val secureStorage = remember { createSecureStorage() }
@@ -43,19 +41,19 @@ fun App(
         }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
-        // Watch for session changes and redirect to login when the user is signed out
+        // 🔐 Session-driven routing with guards in both directions
         LaunchedEffect(currentUser) {
-            if (currentUser == null) {
+            if (currentUser == null && currentScreen == "main") {
+                // user signed out → force to login
                 currentScreen = "login"
-            } else {
+            } else if (currentUser != null && currentScreen == "login") {
+                // user signed in → go to main (but don't hijack forgot/create screens)
                 currentScreen = "main"
             }
         }
 
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
-
-                // Login screen first
                 "login" -> LoginScreen(
                     onLoginSuccess = { },
                     onForgotPassword = { /* later feature */ },
@@ -63,9 +61,8 @@ fun App(
                     onReregisterNotifications = onEnableNotifications
                 )
 
-                // Create Account Screen
                 "createAccount" -> CreateAccountScreen(
-                    onSignUpSuccess = { currentScreen = "main" },
+                    onSignUpSuccess = { /* session watcher will flip to main */ },
                     onLoginClick = { currentScreen = "login" }
                 )
 
