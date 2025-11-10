@@ -8,6 +8,10 @@ import jwt from 'jsonwebtoken';
 
 const router = Router();
 
+console.log('[BOOT] Loaded auth routes');  
+
+router.get('/ping', (_req, res) => res.json({ pong: true }));
+
 router.post('/register', async (req: Request<{}, AuthResponse | ErrorResponse, RegisterRequest>, res: Response<AuthResponse | ErrorResponse>) => {
   try {
     const { error, value } = registerSchema.validate(req.body);
@@ -302,4 +306,170 @@ router.put('/profile', authenticateToken, async (req: AuthenticatedRequest, res:
   }
 });
 
+// Forgot Password route
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Check email format 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
+    // Checking if user exists 
+    const { data: existingUser } = await supabaseAdmin
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (!existingUser) {
+      return res.json({
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent'
+      });
+    }
+    // Send password reset email 
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password`
+    });
+
+    if (error) {
+      console.error('Password reset error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send password reset email'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an account exists with this email, a password reset link has been sent'
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+//Reset password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token and new password are required'
+      });
+    }
+
+    // Allow for strong password, check length 
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      });
+    }
+
+    // verify the token and get the user 
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser(token);
+    
+    if (getUserError || !user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    // Update users password 
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      user.id,
+      { password: password }
+    );
+
+    if (updateError) {
+      console.error('Reset password error:', updateError);
+      return res.status(400).json({
+        success: false,
+        message: updateError.message || 'Failed to reset password'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+//Check if token is valid 
+router.post('/verify-reset-token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token is required'
+      });
+    }
+
+    //verify token 
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired token'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Token is valid',
+      user: {
+        id: user.id,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Verify token error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
 export default router;
