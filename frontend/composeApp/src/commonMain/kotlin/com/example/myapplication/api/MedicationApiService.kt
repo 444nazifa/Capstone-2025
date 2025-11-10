@@ -10,7 +10,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 class MedicationApiService private constructor(
-    private val baseUrl: String = "https://backend-ts-theta.vercel.app"
+    private val baseUrl: String = "http://localhost:3015"
 ) {
     companion object {
         @Volatile

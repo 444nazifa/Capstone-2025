@@ -57,10 +57,10 @@ app.get('/api/cron/check-reminders', async (req, res) => {
     }
 
     await reminderScheduler.triggerCheck();
-    res.json({ success: true, message: 'Reminder check completed' });
+    return res.json({ success: true, message: 'Reminder check completed' });
   } catch (error) {
     console.error('Cron error:', error);
-    res.status(500).json({ error: 'Failed to check reminders' });
+    return res.status(500).json({ error: 'Failed to check reminders' });
   }
 });
 

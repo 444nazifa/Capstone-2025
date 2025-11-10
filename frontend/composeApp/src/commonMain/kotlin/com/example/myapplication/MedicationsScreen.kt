@@ -2,6 +2,7 @@ package com.example.myapplication
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.LocalPharmacy
@@ -30,6 +32,15 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.viewmodel.MedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.example.myapplication.storage.createSecureStorage
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import kotlinx.coroutines.delay
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.animateColorAsState
 
 @Composable
 fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifier) {
@@ -196,16 +207,22 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                         }
                     } else {
                         medications.forEach { medication ->
-                            MedicationCardExpanded(
-                                name = medication.medicationName,
-                                dosage = medication.dosage,
-                                frequency = medication.frequency,
-                                time = medication.schedules?.firstOrNull()?.scheduledTime?.let { formatTime(it) } ?: "Not scheduled",
-                                nextRefill = medication.nextRefillDate ?: "Not set",
-                                doctor = medication.doctorName ?: "Unknown",
-                                pharmacy = medication.pharmacyName ?: "Unknown",
-                                color = parseColor(medication.color),
-                                supplyRemaining = (medication.supplyRemainingPercentage ?: 0.0).toFloat() / 100f
+                            SwipeToDeleteMedicationCard(
+                                medication = medication,
+                                onDelete = { viewModel.deleteMedication(it) },
+                                content = {
+                                    MedicationCardExpanded(
+                                        name = medication.medicationName,
+                                        dosage = medication.dosage,
+                                        frequency = medication.frequency,
+                                        time = medication.schedules?.firstOrNull()?.scheduledTime?.let { formatTime(it) } ?: "Not scheduled",
+                                        nextRefill = medication.nextRefillDate ?: "Not set",
+                                        doctor = medication.doctorName ?: "Unknown",
+                                        pharmacy = medication.pharmacyName ?: "Unknown",
+                                        color = parseColor(medication.color),
+                                        supplyRemaining = (medication.supplyRemainingPercentage ?: 0.0).toFloat() / 100f
+                                    )
+                                }
                             )
                         }
                     }
@@ -459,6 +476,76 @@ fun MedicationCardExpanded(
     }
 }
 
+
+@Composable
+fun SwipeToDeleteMedicationCard(
+    medication: com.example.myapplication.data.UserMedication,
+    onDelete: (String) -> Unit,
+    content: @Composable () -> Unit
+) {
+    var show by remember { mutableStateOf(true) }
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { dismissValue ->
+            when (dismissValue) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    show = false
+                    onDelete(medication.id)
+                    true
+                }
+                else -> false
+            }
+        }
+    )
+
+    AnimatedVisibility(
+        visible = show,
+        exit = fadeOut() + shrinkVertically()
+    ) {
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(vertical = 8.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFFFF5252)),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Row(
+                        modifier = Modifier.padding(end = 24.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Text(
+                            text = "Delete",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            },
+            enableDismissFromStartToEnd = false,
+            enableDismissFromEndToStart = true
+        ) {
+            // Wrap content in a Box with white background to cover the red background
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+            ) {
+                content()
+            }
+        }
+    }
+}
 
 @Preview
 @Composable

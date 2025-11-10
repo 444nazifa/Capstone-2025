@@ -13,7 +13,8 @@ import kotlinx.coroutines.launch
 
 class MedicationViewModel(
     private val medicationApi: MedicationApiService = MedicationApiService.getInstance(),
-    private val secureStorage: SecureStorage
+    private val secureStorage: SecureStorage,
+    private val onMedicationDeleted: (() -> Unit)? = null
 ) : ViewModel() {
 
     // Medication summary
@@ -92,6 +93,37 @@ class MedicationViewModel(
                 medication.medicationName.contains(query, ignoreCase = true) ||
                 medication.dosage.contains(query, ignoreCase = true)
             }
+        }
+    }
+
+    fun deleteMedication(medicationId: String) {
+        viewModelScope.launch {
+            _error.value = null
+
+            val token = secureStorage.getToken()
+            if (token.isNullOrEmpty()) {
+                _error.value = "Not authenticated"
+                return@launch
+            }
+
+            medicationApi.deleteMedication(token, medicationId)
+                .onSuccess {
+                    // Remove from local state
+                    _medications.value = _medications.value.filter { it.id != medicationId }
+                    filterMedications(_searchQuery.value)
+
+                    // Reload summary to update counts
+                    medicationApi.getMedicationSummary(token)
+                        .onSuccess { summary ->
+                            _summary.value = summary
+                        }
+
+                    // Notify home screen to refresh
+                    onMedicationDeleted?.invoke()
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message
+                }
         }
     }
 

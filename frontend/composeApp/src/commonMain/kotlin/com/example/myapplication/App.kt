@@ -33,7 +33,14 @@ fun App(
         var currentScreen by remember { mutableStateOf(initialScreen) }
         val secureStorage = remember { createSecureStorage() }
         val homeViewModel = remember { HomeViewModel(secureStorage = secureStorage) }
-        val medicationViewModel = remember { MedicationViewModel(secureStorage = secureStorage) }
+        val medicationViewModel = remember {
+            MedicationViewModel(
+                secureStorage = secureStorage,
+                onMedicationDeleted = {
+                    homeViewModel.loadMedications()
+                }
+            )
+        }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
         // Watch for session changes and redirect to login when the user is signed out

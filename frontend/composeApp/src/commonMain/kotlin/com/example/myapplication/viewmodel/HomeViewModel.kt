@@ -54,21 +54,47 @@ class HomeViewModel(
                 return@launch
             }
 
-            medicationApi.getAllMedications(token, activeOnly = true)
-                .onSuccess { userMedications ->
-                    _medications.value = convertToMedicationReminders(userMedications)
+            // Get today's date range for history query
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val startOfDay = today.date.atTime(0, 0, 0).toInstant(TimeZone.currentSystemDefault()).toString()
+            val endOfDay = today.date.atTime(23, 59, 59).toInstant(TimeZone.currentSystemDefault()).toString()
+
+            // Load medications and history in parallel
+            val medicationsResult = medicationApi.getAllMedications(token, activeOnly = true)
+            val historyResult = medicationApi.getMedicationHistory(
+                token = token,
+                startDate = startOfDay,
+                endDate = endOfDay,
+                status = "taken"
+            )
+
+            medicationsResult.onSuccess { userMedications ->
+                historyResult.onSuccess { history ->
+                    _medications.value = convertToMedicationReminders(userMedications, history)
+                }.onFailure {
+                    // If history fetch fails, still load medications but without taken status
+                    _medications.value = convertToMedicationReminders(userMedications, emptyList())
                 }
-                .onFailure { exception ->
-                    _error.value = exception.message
-                }
+            }.onFailure { exception ->
+                _error.value = exception.message
+            }
 
             _isLoading.value = false
         }
     }
 
-    private fun convertToMedicationReminders(userMedications: List<UserMedication>): List<MedicationReminder> {
+    private fun convertToMedicationReminders(
+        userMedications: List<UserMedication>,
+        history: List<com.example.myapplication.data.MedicationHistory> = emptyList()
+    ): List<MedicationReminder> {
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val todayDayOfWeek = today.dayOfWeek.ordinal // 0 = Sunday
+
+        // Create a set of medication IDs that have been taken today
+        val takenMedicationIds = history
+            .filter { it.status == "taken" }
+            .map { it.userMedicationId }
+            .toSet()
 
         return userMedications.flatMap { medication ->
             val schedules = medication.schedules ?: emptyList()
@@ -88,7 +114,7 @@ class HomeViewModel(
                     dosage = medication.dosage,
                     time = formatTime(schedule.scheduledTime),
                     instructions = medication.instructions,
-                    taken = false, // TODO: Check medication history
+                    taken = takenMedicationIds.contains(medication.id), // Check if medication was taken today
                     frequency = medication.frequency,
                     color = parseColor(medication.color),
                     daysOfWeek = schedule.daysOfWeek  // Store which days this medication is scheduled

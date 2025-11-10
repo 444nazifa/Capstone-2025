@@ -56,7 +56,7 @@ class ReminderSchedulerService {
   private async checkDueReminders(): Promise<void> {
     try {
       const now = new Date();
-      const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
+      const currentTime = now.toTimeString().split(' ')[0]?.substring(0, 5);
       const currentDayOfWeek = now.getDay();
 
       const { data: schedules, error: schedulesError } = await supabaseAdmin
@@ -90,7 +90,6 @@ class ReminderSchedulerService {
 
       const remindersToSend = [];
       const today = now.toISOString().split('T')[0];
-
       for (const schedule of schedules) {
         const scheduledTime = schedule.scheduled_time.substring(0, 5);
 
@@ -115,8 +114,7 @@ class ReminderSchedulerService {
           .select('id')
           .eq('user_medication_id', schedule.user_medication_id)
           .eq('medication_schedule_id', schedule.id)
-          .gte('scheduled_at', `${today}T00:00:00`)
-          .lte('scheduled_at', `${today}T23:59:59`)
+          .eq('scheduled_at', scheduledAt) 
           .in('status', ['taken', 'skipped'])
           .limit(1);
 
@@ -140,13 +138,13 @@ class ReminderSchedulerService {
       for (const { schedule, medication, scheduledAt } of remindersToSend) {
         try {
           const success = await notificationService.sendMedicationReminder(
-            medication.user_id,
+            medication.user_id, 
             {
               id: medication.id,
               name: medication.medication_name,
               dosage: medication.dosage
             },
-            schedule.id
+            schedule.id 
           );
 
           if (success) {
