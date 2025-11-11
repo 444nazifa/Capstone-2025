@@ -33,7 +33,12 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit = {},
     onForgotPassword: () -> Unit = {},
     onCreateAccount: () -> Unit = {},
-    viewModel: LoginViewModel = viewModel { LoginViewModel() }
+    onReregisterNotifications: suspend () -> Boolean = { false },
+    viewModel: LoginViewModel = viewModel {
+        LoginViewModel(
+            onLoginSuccess = onReregisterNotifications
+        )
+    }
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

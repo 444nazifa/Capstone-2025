@@ -9,23 +9,29 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.myapplication.data.UserSession
+import com.example.myapplication.notifications.PushNotificationManager
 import com.example.myapplication.storage.createSecureStorage
 import com.example.myapplication.storage.initSecureStorage
 
 class MainActivity : ComponentActivity() {
+    private lateinit var pushNotificationManager: PushNotificationManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Initialize secure storage
         initSecureStorage(applicationContext)
         UserSession.initialize(createSecureStorage())
+
+        pushNotificationManager = PushNotificationManager.getInstance(this)
+        pushNotificationManager.initializePermissionLauncher(this)
 
         // Handle deep links
         val deepLinkData = handleDeepLink(intent)
 
         setContent {
-            App(
+            AppWithPushNotifications(
+                pushManager = pushNotificationManager,
                 initialRoute = deepLinkData.first,
                 resetToken = deepLinkData.second
             )
@@ -78,6 +84,21 @@ class MainActivity : ComponentActivity() {
 
         return Pair(null, null)
     }
+}
+
+@Composable
+fun AppWithPushNotifications(
+    pushManager: PushNotificationManager,
+    initialRoute: String? = null,
+    resetToken: String? = null
+) {
+    App(
+        onEnableNotifications = { pushManager.requestPermissionAndRegister() },
+        onDisableNotifications = { pushManager.disablePushNotifications() },
+        isNotificationsEnabled = { pushManager.isTokenRegistered() },
+        initialRoute = initialRoute,
+        resetToken = resetToken
+    )
 }
 
 @Preview
