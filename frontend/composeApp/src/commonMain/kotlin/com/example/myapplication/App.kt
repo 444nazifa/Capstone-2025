@@ -19,21 +19,30 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.data.UserSession
 
 @Composable
-fun App() {
+fun App(
+    initialRoute: String? = null,
+    resetToken: String? = null
+) {
     CareCapsuleTheme {
         // Observe current user
         val currentUser by UserSession.currentUser.collectAsState()
-        val initialScreen = if (currentUser != null) "main" else "login"
+        val initialScreen = when {
+            resetToken != null -> "resetPassword"
+            initialRoute != null -> initialRoute
+            currentUser != null -> "main"
+            else -> "login"
+        }
 
         var currentScreen by remember { mutableStateOf(initialScreen) }
+        var passwordResetToken by remember { mutableStateOf(resetToken) }
         val homeViewModel = remember { HomeViewModel() }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
         // Watch for session changes and redirect to login when the user is signed out
         LaunchedEffect(currentUser) {
-            if (currentUser == null) {
+            if (currentUser == null && currentScreen != "resetPassword" && currentScreen != "forgotPassword") {
                 currentScreen = "login"
-            } else {
+            } else if (currentUser != null && currentScreen !in listOf("resetPassword", "forgotPassword")) {
                 currentScreen = "main"
             }
         }
@@ -44,7 +53,7 @@ fun App() {
                 // Login screen first
                 "login" -> LoginScreen(
                     onLoginSuccess = { },
-                    onForgotPassword = { /* later feature */ },
+                    onForgotPassword = { currentScreen = "forgotPassword" },
                     onCreateAccount = { currentScreen = "createAccount" } // Go to Create Account
                 )
 
@@ -53,6 +62,27 @@ fun App() {
                     onSignUpSuccess = { currentScreen = "main" },
                     onLoginClick = { currentScreen = "login" }
                 )
+
+                // Forgot Password Screen
+                "forgotPassword" -> ForgotPasswordScreen(
+                    onBackToLogin = { currentScreen = "login" }
+                )
+
+                // Reset Password Screen
+                "resetPassword" -> {
+                    if (passwordResetToken != null) {
+                        ResetPasswordScreen(
+                            resetToken = passwordResetToken!!,
+                            onPasswordResetSuccess = { currentScreen = "login" },
+                            onBackToLogin = { currentScreen = "login" }
+                        )
+                    } else {
+                        // If no token, redirect to login
+                        LaunchedEffect(Unit) {
+                            currentScreen = "login"
+                        }
+                    }
+                }
 
                 // Main app (your bottom navigation)
                 "main" -> MainApp(

@@ -8,8 +8,6 @@ import jwt from 'jsonwebtoken';
 
 const router = Router();
 
-console.log('[BOOT] Loaded auth routes');  
-
 router.get('/ping', (_req, res) => res.json({ pong: true }));
 
 router.post('/register', async (req: Request<{}, AuthResponse | ErrorResponse, RegisterRequest>, res: Response<AuthResponse | ErrorResponse>) => {
@@ -340,9 +338,11 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
         message: 'If an account exists with this email, a password reset link has been sent'
       });
     }
-    // Send password reset email 
+    // Send password reset email with deep link for mobile app
+    // The token will be appended by Supabase as a URL fragment (#access_token=xxx)
+    // Our deep link handler will extract it from the query parameters
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password`
+      redirectTo: 'carecapsule://reset-password'
     });
 
     if (error) {

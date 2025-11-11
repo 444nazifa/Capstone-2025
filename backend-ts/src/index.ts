@@ -36,7 +36,6 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-console.log('[BOOT] Mounted /api/auth');
 app.use('/api/medication', medicationRoutes);
 
 app.use(notFoundHandler);

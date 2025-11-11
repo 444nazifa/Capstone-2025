@@ -132,6 +132,75 @@ class AuthApiService(
         }
     }
 
+    suspend fun forgotPassword(email: String): Result<String> {
+        return try {
+            val response = client.post("$baseUrl/api/auth/forgot-password") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("email" to email))
+            }
+
+            val authResponse: AuthResponse = response.body()
+
+            if (response.status.isSuccess() && authResponse.success) {
+                Result.success(authResponse.message ?: "Password reset email sent")
+            } else {
+                val errorMessage = authResponse.errors?.joinToString(", ")
+                    ?: authResponse.message
+                    ?: "Failed to send password reset email"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Network error: ${e.message}"))
+        }
+    }
+
+    suspend fun verifyResetToken(token: String): Result<String> {
+        return try {
+            val response = client.post("$baseUrl/api/auth/verify-reset-token") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("token" to token))
+            }
+
+            val authResponse: AuthResponse = response.body()
+
+            if (response.status.isSuccess() && authResponse.success) {
+                Result.success(authResponse.message ?: "Token is valid")
+            } else {
+                val errorMessage = authResponse.errors?.joinToString(", ")
+                    ?: authResponse.message
+                    ?: "Invalid or expired token"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Network error: ${e.message}"))
+        }
+    }
+
+    suspend fun resetPassword(token: String, password: String): Result<String> {
+        return try {
+            val response = client.post("$baseUrl/api/auth/reset-password") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf(
+                    "token" to token,
+                    "password" to password
+                ))
+            }
+
+            val authResponse: AuthResponse = response.body()
+
+            if (response.status.isSuccess() && authResponse.success) {
+                Result.success(authResponse.message ?: "Password has been reset successfully")
+            } else {
+                val errorMessage = authResponse.errors?.joinToString(", ")
+                    ?: authResponse.message
+                    ?: "Failed to reset password"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Network error: ${e.message}"))
+        }
+    }
+
     fun close() {
         client.close()
     }
