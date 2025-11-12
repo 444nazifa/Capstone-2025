@@ -13,7 +13,9 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -39,12 +41,16 @@ data class UserProfile(
 fun ProfileScreen(
     modifier: Modifier = Modifier,
     onSignOut: () -> Unit = {},
+    onEnableNotifications: suspend () -> Boolean = { false },
+    onDisableNotifications: suspend () -> Boolean = { false },
+    isNotificationsEnabled: () -> Boolean = { false },
     viewModel: ProfileViewModel = viewModel { ProfileViewModel() }
 ) {
-    // --- demo state (wire to real data later) ---
-    var medReminders by remember { mutableStateOf(true) }
+    var medReminders by remember { mutableStateOf(isNotificationsEnabled()) }
     var refillAlerts by remember { mutableStateOf(true) }
     var genericInfo by remember { mutableStateOf(true) }
+    var isTogglingNotifications by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     // Get user from session
     val sessionUser by UserSession.currentUser.collectAsState()
@@ -228,9 +234,24 @@ fun ProfileScreen(
 
                         SettingRow(
                             title = "Medication Reminders",
-                            subtitle = "Get notified when it’s time to take your medications",
+                            subtitle = "Get notified when it's time to take your medications",
                             checked = medReminders,
-                            onChange = { medReminders = it }
+                            onChange = { enabled ->
+                                if (enabled != medReminders && !isTogglingNotifications) {
+                                    isTogglingNotifications = true
+                                    scope.launch {
+                                        val success = if (enabled) {
+                                            onEnableNotifications()
+                                        } else {
+                                            onDisableNotifications()
+                                        }
+                                        if (success) {
+                                            medReminders = enabled
+                                        }
+                                        isTogglingNotifications = false
+                                    }
+                                }
+                            }
                         )
 
                         HorizontalDivider(

@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val authApiService: AuthApiService = AuthApiService()
+    private val authApiService: AuthApiService = AuthApiService(),
+    private val onLoginSuccess: suspend () -> Boolean = { false }
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
@@ -57,6 +58,18 @@ class LoginViewModel(
                 onSuccess = { response ->
                     // Store user data in session
                     UserSession.login(response.user!!, response.token!!)
+
+                    // Re-register device token with new user (fixes multi-account issue)
+                    try {
+                        val registered = onLoginSuccess()
+                        if (registered) {
+                            println("Device token re-registered successfully")
+                        }
+                    } catch (e: Exception) {
+                        // Don't fail login if notification registration fails
+                        println("Warning: Failed to register device token: ${e.message}")
+                    }
+
                     AuthState.Success(response.user!!, response.token!!)
                 },
                 onFailure = { error ->

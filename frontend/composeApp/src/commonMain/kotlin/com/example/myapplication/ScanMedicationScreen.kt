@@ -35,14 +35,21 @@ fun ScanMedicationScreen(
     viewModel: ScanMedicationViewModel = viewModel(),
     showBackButton: Boolean = false,
     onNavigateBack: () -> Unit = {},
-    onBarcodeScanned: (String) -> Unit = {}
+    onBarcodeScanned: (String) -> Unit = {},
+    onMedicationAdded: () -> Unit = {}
 ) {
     val barcode by viewModel.barcode.collectAsState()
     var cameraPermissionGranted by remember { mutableStateOf<Boolean?>(null) } // null = checking
     var showManualEntry by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
+    var searchResults by remember { mutableStateOf<List<com.example.myapplication.data.MedicationSearchResult>?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var showAddBottomSheet by remember { mutableStateOf(false) }
+    var selectedMedication by remember { mutableStateOf<com.example.myapplication.data.MedicationSearchResult?>(null) }
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Request permission on mount
     LaunchedEffect(Unit) {
@@ -61,14 +68,15 @@ fun ScanMedicationScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Header
-            ScanHeader(
-                showBackButton = showBackButton,
-                onNavigateBack = onNavigateBack
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Header
+                ScanHeader(
+                    showBackButton = showBackButton,
+                    onNavigateBack = onNavigateBack
+                )
 
-            when {
+                when {
                 cameraPermissionGranted == null -> {
                     // Still checking permission, show loading
                     Box(
@@ -88,19 +96,33 @@ fun ScanMedicationScreen(
                     )
                 }
                 showManualEntry -> {
-                    ManualEntryContent(
-                        onBack = { showManualEntry = false },
-                        onSubmit = { barcode ->
+                    ManualEntryWithResultsContent(
+                        onBack = {
+                            showManualEntry = false
+                            searchResults = null
+                            searchQuery = ""
+                        },
+                        onSearch = { query ->
                             isProcessing = true
+                            searchQuery = query
                             scope.launch {
-                                val result = sendBarcodeToBackend(barcode)
+                                val response = searchMedicationsByNDC(query)
                                 isProcessing = false
-                                if (result != null) {
-                                    showSuccessDialog = true
+                                if (response != null && response.success && !response.data.isNullOrEmpty()) {
+                                    searchResults = response.data
+                                } else {
+                                    searchResults = emptyList()
+                                    errorMessage = response?.error ?: "No medications found"
+                                    showErrorDialog = true
                                 }
                             }
                         },
-                        isProcessing = isProcessing
+                        searchResults = searchResults,
+                        isProcessing = isProcessing,
+                        onMedicationSelected = { medication ->
+                            selectedMedication = medication
+                            showAddBottomSheet = true
+                        }
                     )
                 }
                 else -> {
@@ -109,26 +131,104 @@ fun ScanMedicationScreen(
                         onImageCaptured = { imageData ->
                             isProcessing = true
                             scope.launch {
-                                val result = sendImageToBackend(imageData)
-                                isProcessing = false
-                                if (result != null) {
-                                    showSuccessDialog = true
+                                val ndc = sendImageToBackend(imageData)
+                                if (ndc != null) {
+                                    searchQuery = ndc
+                                    val response = searchMedicationsByNDC(ndc)
+                                    isProcessing = false
+                                    if (response != null && response.success && !response.data.isNullOrEmpty()) {
+                                        searchResults = response.data
+                                    } else {
+                                        errorMessage = response?.error ?: "No medications found for NDC: $ndc"
+                                        showErrorDialog = true
+                                    }
+                                } else {
+                                    isProcessing = false
+                                    errorMessage = "Could not read barcode from image"
+                                    showErrorDialog = true
                                 }
                             }
                         },
                         isProcessing = isProcessing
                     )
                 }
+                }
             }
+
+            // Snackbar Host
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            )
         }
     }
 
-    if (showSuccessDialog) {
-        SuccessDialog(
-            result = barcode,
-            onDismiss = {
-                showSuccessDialog = false
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showErrorDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Error,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(48.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Search Failed",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(errorMessage)
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showErrorDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Text("OK")
+                }
             }
+        )
+    }
+
+    // Add Medication Bottom Sheet
+    if (showAddBottomSheet && selectedMedication != null) {
+        AddMedicationBottomSheet(
+            medication = selectedMedication!!,
+            onDismiss = {
+                showAddBottomSheet = false
+                selectedMedication = null
+            },
+            onSave = { request ->
+                scope.launch {
+                    isProcessing = true
+                    val success = addMedicationToUserList(request)
+                    isProcessing = false
+                    if (success) {
+                        snackbarHostState.showSnackbar(
+                            message = "✓ Medication added successfully!",
+                            duration = SnackbarDuration.Short
+                        )
+
+                        showAddBottomSheet = false
+                        selectedMedication = null
+                        searchResults = null
+                        searchQuery = ""
+                        showManualEntry = false
+
+                        onMedicationAdded()
+                    } else {
+                        errorMessage = "Failed to add medication. Please try again."
+                        showErrorDialog = true
+                    }
+                }
+            },
+            isLoading = isProcessing
         )
     }
 }
@@ -343,7 +443,7 @@ fun CameraContent(
                 Icon(imageVector = Icons.Default.EditNote, contentDescription = null,
                     modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("MANUAL ENTRY - 11 DIGITS", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text("SEARCH BY NDC OR NAME", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -379,94 +479,162 @@ fun CameraContent(
 }
 
 @Composable
-fun ManualEntryContent(onBack: () -> Unit, onSubmit: (String) -> Unit, isProcessing: Boolean) {
-    var barcodeText by remember { mutableStateOf("") }
+fun ManualEntryWithResultsContent(
+    onBack: () -> Unit,
+    onSearch: (String) -> Unit,
+    searchResults: List<com.example.myapplication.data.MedicationSearchResult>?,
+    isProcessing: Boolean,
+    onMedicationSelected: (com.example.myapplication.data.MedicationSearchResult) -> Unit
+) {
+    var ndcText by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Icon(imageVector = Icons.Default.EditNote, contentDescription = null,
-            modifier = Modifier.size(80.dp), tint = Color(0xFF2E7D32))
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("Enter Barcode Number", style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Enter the 11-digit code manually", fontSize = 14.sp, color = Color.Gray,
-            textAlign = TextAlign.Center)
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        OutlinedTextField(
-            value = barcodeText,
-            onValueChange = {
-                if (it.length <= 11 && it.all { char -> char.isDigit() }) {
-                    barcodeText = it
-                    showError = false
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Search Input Section
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF5F5F5))
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Default.ArrowBack, "Back", tint = Color(0xFF2E7D32))
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Barcode Number") },
-            placeholder = { Text("Enter 11 digits") },
-            isError = showError,
-            supportingText = {
-                if (showError) {
-                    Text("Please enter exactly 11 digits", color = MaterialTheme.colorScheme.error)
-                } else {
-                    Text("${barcodeText.length}/11 digits")
-                }
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    if (barcodeText.length == 11) {
-                        onSubmit(barcodeText)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Search Medications",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2E7D32)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = ndcText,
+                onValueChange = {
+                    if (it.length <= 50) {
+                        ndcText = it
+                        showError = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("NDC Code or Medication Name") },
+                placeholder = { Text("e.g., 0378-6208-93 or Aspirin") },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF2E7D32)) },
+                isError = showError,
+                supportingText = {
+                    if (showError) {
+                        Text("Please enter a valid NDC or medication name", color = MaterialTheme.colorScheme.error)
+                    } else {
+                        Text("Accepts dashes: 12345-678-90")
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        val trimmed = ndcText.trim()
+                        if (trimmed.isNotEmpty()) {
+                            onSearch(trimmed)
+                        } else {
+                            showError = true
+                        }
+                    }
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF2E7D32),
+                    focusedLabelColor = Color(0xFF2E7D32),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = {
+                    val trimmed = ndcText.trim()
+                    if (trimmed.isNotEmpty()) {
+                        onSearch(trimmed)
                     } else {
                         showError = true
                     }
-                }
-            ),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF2E7D32),
-                focusedLabelColor = Color(0xFF2E7D32)
-            ),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                if (barcodeText.length == 11) {
-                    onSubmit(barcodeText)
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                shape = RoundedCornerShape(12.dp),
+                enabled = !isProcessing
+            ) {
+                if (isProcessing) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("SEARCHING...", fontWeight = FontWeight.Bold)
                 } else {
-                    showError = true
+                    Icon(Icons.Default.Search, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("SEARCH", fontWeight = FontWeight.Bold)
                 }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-            shape = RoundedCornerShape(12.dp),
-            enabled = !isProcessing
-        ) {
-            if (isProcessing) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-            } else {
-                Text("SUBMIT", fontWeight = FontWeight.Bold)
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        // Results Section
+        when {
+            searchResults == null -> {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                        Icon(Icons.Default.EditNote, null, Modifier.size(80.dp), Color(0xFF2E7D32).copy(alpha = 0.5f))
+                        Spacer(Modifier.height(16.dp))
+                        Text("Enter NDC or Medication Name", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.Gray, textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Search for medications to add to your list", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, textAlign = TextAlign.Center)
+                    }
+                }
+            }
+            searchResults.isEmpty() -> {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                        Icon(Icons.Default.SearchOff, null, Modifier.size(80.dp), Color.Gray)
+                        Spacer(Modifier.height(16.dp))
+                        Text("No Medications Found", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.Gray)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Try a different search term", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    }
+                }
+            }
+            else -> {
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text(
+                            "${searchResults.size} Result${if (searchResults.size != 1) "s" else ""} Found",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
 
-        TextButton(onClick = onBack, enabled = !isProcessing) {
-            Text("Back to Camera", color = Color(0xFF2E7D32))
+                    items(searchResults.size) { index ->
+                        MedicationResultCard(
+                            medication = searchResults[index],
+                            isAdding = false,
+                            onAdd = {
+                                onMedicationSelected(searchResults[index])
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -484,11 +652,11 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text("Camera Permission Required", style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Text("To scan medication barcodes, we need access to your camera.",
+        Text("To scan medications, we need access to your camera.",
             fontSize = 14.sp, color = Color.Gray, textAlign = TextAlign.Center)
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -499,61 +667,11 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Grant Permission", fontWeight = FontWeight.Bold)
+            Text("GRANT PERMISSION", fontWeight = FontWeight.Bold)
         }
     }
 }
 
-@Composable
-fun SuccessDialog(result: String?, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null,
-                    modifier = Modifier.size(60.dp), tint = Color(0xFF4CAF50))
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Scan Successful!", style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("Medication information retrieved", fontSize = 14.sp, color = Color.Gray,
-                    textAlign = TextAlign.Center)
-
-                if (result != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
-                    ) {
-                        Text("Barcode: $result", modifier = Modifier.padding(12.dp),
-                            fontSize = 12.sp, color = Color(0xFF1B5E20))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Done")
-                }
-            }
-        }
-    }
-}
 
 // Platform-specific expect declarations
 @Composable
@@ -565,4 +683,8 @@ expect fun captureImage(onImageCaptured: (ByteArray) -> Unit)
 
 expect suspend fun sendImageToBackend(imageData: ByteArray): String?
 
-expect suspend fun sendBarcodeToBackend(barcode: String): String?
+expect suspend fun searchMedicationsByNDC(ndc: String): com.example.myapplication.data.MedicationSearchResponse?
+
+expect suspend fun addMedicationToUserList(request: com.example.myapplication.data.CreateMedicationRequest): Boolean
+
+
