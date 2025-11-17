@@ -27,6 +27,7 @@ import myapplication.composeapp.generated.resources.login_background
 import kotlinx.datetime.*
 import com.example.myapplication.viewmodel.CreateAccountViewModel
 import com.example.myapplication.data.AuthState
+import com.example.myapplication.theme.CareCapsuleTheme
 
 @Composable
 fun CreateAccountScreen(
@@ -110,7 +111,7 @@ fun CreateAccountScreen(
                 // Title
                 Text(
                     text = "Create New Account",
-                    color = Color(0xFF2E7D32),
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -347,7 +348,7 @@ fun CreateAccountScreen(
                             TextButton(onClick = onLoginClick, contentPadding = PaddingValues(0.dp)) {
                                 Text(
                                     text = "Log in here.",
-                                    color = Color(0xFF388E3C),
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -412,4 +413,15 @@ private fun formatDobInput(dob: String): String {
     val year  = dob.substring(4, 8)
 
     return "$month/$day/$year"
+}
+
+@Preview
+@Composable
+fun CreateAccountScreenPreview() {
+    CareCapsuleTheme {
+        CreateAccountScreen(
+            onSignUpSuccess = {},
+            onLoginClick = {}
+        )
+    }
 }

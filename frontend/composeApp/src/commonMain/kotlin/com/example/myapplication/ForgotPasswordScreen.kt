@@ -22,6 +22,8 @@ import myapplication.composeapp.generated.resources.Res
 import myapplication.composeapp.generated.resources.care_capsule_logo
 import myapplication.composeapp.generated.resources.login_background
 import com.example.myapplication.viewmodel.ForgotPasswordViewModel
+import com.example.myapplication.theme.CareCapsuleTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ForgotPasswordScreen(
@@ -73,7 +75,7 @@ fun ForgotPasswordScreen(
                 // Title
                 Text(
                     text = "Forgot Password",
-                    color = Color(0xFF2E7D32),
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -81,7 +83,7 @@ fun ForgotPasswordScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Enter the email associated with your account.",
-                    color = Color(0xFF3F3F3F),
+                    color = Color.Black,
                     fontSize = 14.sp
                 )
 
@@ -132,7 +134,7 @@ fun ForgotPasswordScreen(
                         ) {
                             Text(
                                 "Enter a valid email, e.g. name@example.com",
-                                color = Color(0xFFD32F2F),
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
@@ -217,7 +219,7 @@ fun ForgotPasswordScreen(
                         ) {
                             Text(
                                 text = "Back to Login",
-                                color = Color(0xFF388E3C),
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -233,4 +235,14 @@ fun ForgotPasswordScreen(
 private fun isValidEmail(s: String): Boolean {
     val re = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
     return re.matches(s.trim())
+}
+
+@Preview
+@Composable
+fun ForgotPasswordScreenPreview() {
+    CareCapsuleTheme {
+        ForgotPasswordScreen(
+            onBackToLogin = {}
+        )
+    }
 }

@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class MedicationViewModel(
-    private val medicationApi: MedicationApiService = MedicationApiService.getInstance(),
+    private val medicationApi: MedicationApiService = MedicationApiService.shared,
     private val secureStorage: SecureStorage,
     private val onMedicationDeleted: (() -> Unit)? = null
 ) : ViewModel() {

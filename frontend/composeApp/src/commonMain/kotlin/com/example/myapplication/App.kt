@@ -28,7 +28,7 @@ fun App(
     CareCapsuleTheme {
         val currentUser by UserSession.currentUser.collectAsState()
 
-        var currentScreen by remember { mutableStateOf(initialScreen) }
+        var currentScreen by remember { mutableStateOf("login") }
         val secureStorage = remember { createSecureStorage() }
         val homeViewModel = remember { HomeViewModel(secureStorage = secureStorage) }
         val medicationViewModel = remember {
@@ -128,21 +128,28 @@ fun MainApp(
         }
     ) { innerPadding ->
         when (selectedTab) {
-            "home" -> HomeScreen(homeViewModel)
-            "medications" -> MedicationScreen(medicationViewModel, modifier = Modifier.padding(innerPadding))
-            "scan" ->    ScanMedicationScreen(
+            "home" -> HomeScreen(
+                viewModel = homeViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
+            "medications" -> MedicationScreen(
+                viewModel = medicationViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
+
+            "scan" -> ScanMedicationScreen(
                 viewModel = scanMedicationViewModel,
-                showBackButton = false, // ← No back button
+                showBackButton = false,
                 onBarcodeScanned = { barcode ->
-                    // print the scanned barcode
                     println("Scanned barcode: $barcode")
                 },
                 onMedicationAdded = {
-                    // Refresh both home and medication screens
                     homeViewModel.loadMedications()
                     medicationViewModel.loadMedicationData()
-                }
+                },
+                modifier = Modifier.padding(innerPadding)   // ← important
             )
+
             "profile" -> ProfileScreen(
                 modifier = Modifier.padding(innerPadding),
                 onSignOut = onSignOut,

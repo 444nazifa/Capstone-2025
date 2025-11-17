@@ -9,19 +9,12 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-class MedicationApiService private constructor(
+class MedicationApiService private constructor() {
     private val baseUrl: String = "http://localhost:3015"
-) {
-    companion object {
-        @Volatile
-        private var instance: MedicationApiService? = null
 
-        fun getInstance(context: Any? = null): MedicationApiService {
-            return instance ?: synchronized(this) {
-                instance ?: MedicationApiService().also {
-                    instance = it
-                }
-            }
+    companion object {
+        val shared: MedicationApiService by lazy {
+            MedicationApiService()
         }
     }
 

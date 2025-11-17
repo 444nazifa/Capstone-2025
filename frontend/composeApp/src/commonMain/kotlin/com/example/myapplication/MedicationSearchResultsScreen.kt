@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.MedicationSearchResult
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun MedicationSearchResultsScreen(
@@ -303,3 +304,33 @@ expect fun AsyncImage(
     contentScale: ContentScale = ContentScale.Fit
 )
 
+@Preview
+@Composable
+fun MedicationSearchResultsScreenPreview() {
+    // Fake data just for design-time preview
+    val sampleResults = listOf(
+        MedicationSearchResult(
+            setId = "1",
+            title = "Ibuprofen 200 mg tablet",
+            labeler = "Generic Pharma Inc.",
+            ndc = listOf("12345-6789-00"),
+            imageUrl = null
+        ),
+        MedicationSearchResult(
+            setId = "2",
+            title = "Amoxicillin 500 mg capsule",
+            labeler = "Health Labs",
+            ndc = listOf("98765-4321-11"),
+            imageUrl = null
+        )
+    )
+
+    MaterialTheme {
+        MedicationSearchResultsScreen(
+            searchResults = sampleResults,
+            searchQuery = "ibuprofen",
+            onNavigateBack = {},
+            onMedicationSelected = { false }   // suspend lambda, no real work in preview
+        )
+    }
+}
