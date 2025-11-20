@@ -42,6 +42,8 @@ import com.example.myapplication.storage.SecureStorage
 import com.example.myapplication.theme.CareCapsuleTheme
 import com.example.myapplication.theme.ScreenContainer
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 @Composable
 fun MedicationScreen(
@@ -53,180 +55,203 @@ fun MedicationScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    val scrollState = rememberScrollState()
-
     ScreenContainer(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
     ) {
-        // 🟢 Title
-        BoxWithConstraints(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .fillMaxSize()
         ) {
-            // maxWidth is the ACTUAL available width inside ScreenContainer
-            val fontSize = when {
-                maxWidth < 320.dp -> 20.sp
-                maxWidth < 380.dp -> 24.sp
-                maxWidth < 440.dp -> 27.sp
-                else -> 30.sp
-            }
-
-            Text(
-                text = "Prescription Information",
-                modifier = Modifier
-                    .fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize,
-                    lineHeight = fontSize * 1.15f
-                ),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        // 🔹 Subtitle
-        Text(
-            text = "Manage your prescription medications, refills, and schedules",
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-            ),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        // 🔍 Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { viewModel.updateSearchQuery(it) },
-            placeholder = {
-                Text(
-                    text = "Search Medications...",
-                    color = Color(0xFF9E9E9E)
-                )
-            },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = Color(0xFF757575)
-                )
-            },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFF5F5F5),
-                unfocusedContainerColor = Color(0xFFF5F5F5),
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-        )
-
-        Spacer(modifier = Modifier.height(5.dp))
-
-        // ─────────────── MEDICATIONS SECTION ───────────────
-        if (isLoading) {
-            Box(
+            // 🟢 Title
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(40.dp),
-                contentAlignment = Alignment.Center
+                    .padding(bottom = 8.dp)
             ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 0.dp, vertical = 6.dp)
-            ) {
+                val base = 28.sp
 
-                // 🔹 Active & Low Supply Cards
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    SummaryCardSmall(
-                        title = "Active",
-                        value = summary?.totalActive?.toString() ?: "0",
-                        color = Color(0xFF4CAF50),
-                        iconType = "active",
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    SummaryCardSmall(
-                        title = "Low Supply",
-                        value = summary?.lowSupplyCount?.toString() ?: "0",
-                        color = Color(0xFFFFA000),
-                        iconType = "lowSupply",
-                        modifier = Modifier.weight(1f)
-                    )
+                // Dynamic scaling — increases on larger screens
+                val dynamicSize = when {
+                    maxWidth < 320.dp -> base * 0.85f   // small phones
+                    maxWidth < 380.dp -> base * 1.00f   // typical phones
+                    maxWidth < 440.dp -> base * 1.12f   // big phones
+                    else -> base * 1.25f                // tablets
                 }
 
-                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    text = "Prescription Information",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontSize = dynamicSize,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = dynamicSize * 1.15f
+                    )
+                )
+            }
 
-                // 🔹 Medication Cards
-                if (medications.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(40.dp),
-                        contentAlignment = Alignment.Center
+            // 🔹 Subtitle
+            Text(
+                text = "Manage your prescription medications, refills, and schedules",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                ),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // 🔍 Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.updateSearchQuery(it) },
+                placeholder = {
+                    Text(
+                        text = "Search Medications...",
+                        color = Color(0xFF9E9E9E)
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = Color(0xFF757575)
+                    )
+                },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFF5F5F5),
+                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+            )
+
+            Spacer(modifier = Modifier.height(5.dp))
+
+            // ───────────── NON-SCROLLING SUMMARY ─────────────
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 0.dp, vertical = 6.dp)
+                ) {
+                    // 🔹 Active & Low Supply Cards
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.LocalPharmacy,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "No medications found",
-                                fontSize = 16.sp,
-                                color = Color.Gray,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = if (searchQuery.isNotEmpty()) "Try a different search" else "Add medications to get started",
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
-                        }
+                        SummaryCardSmall(
+                            title = "Active",
+                            value = summary?.totalActive?.toString() ?: "0",
+                            color = Color(0xFF4CAF50),
+                            iconType = "active",
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        SummaryCardSmall(
+                            title = "Low Supply",
+                            value = summary?.lowSupplyCount?.toString() ?: "0",
+                            color = Color(0xFFFFA000),
+                            iconType = "lowSupply",
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                } else {
-                    medications.forEach { medication ->
-                        SwipeToDeleteMedicationCard(
-                            medication = medication,
-                            onDelete = { viewModel.deleteMedication(it) },
-                            content = {
+
+                    Spacer(modifier = Modifier.height(5.dp))
+                }
+            }
+
+            // ───────────── SCROLLING MEDICATION LIST ONLY ─────────────
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                val listScrollState = rememberScrollState()
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(listScrollState)
+                        .padding(bottom = 120.dp)   // same as Home screen
+                ) {
+                    if (medications.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Default.LocalPharmacy,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "No medications found",
+                                    fontSize = 16.sp,
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = if (searchQuery.isNotEmpty())
+                                        "Try a different search"
+                                    else
+                                        "Add medications to get started",
+                                    fontSize = 14.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    } else {
+                        medications.forEach { medication ->
+                            SwipeToDeleteMedicationCard(
+                                medication = medication,
+                                onDelete = { viewModel.deleteMedication(it) }
+                            ) {
                                 MedicationCardExpanded(
                                     name = medication.medicationName,
                                     dosage = medication.dosage,
                                     frequency = medication.frequency,
-                                    time = medication.schedules?.firstOrNull()?.scheduledTime?.let { formatTime(it) }
+                                    time = medication.schedules?.firstOrNull()
+                                        ?.scheduledTime
+                                        ?.let { formatTime(it) }
                                         ?: "Not scheduled",
                                     nextRefill = medication.nextRefillDate ?: "Not set",
                                     doctor = medication.doctorName ?: "Unknown",
                                     pharmacy = medication.pharmacyName ?: "Unknown",
-                                    color = parseColor(medication.color),
-                                    supplyRemaining = (medication.supplyRemainingPercentage ?: 0.0).toFloat() / 100f
+                                    color = Color(0xFFBDBDBD),
+                                    supplyRemaining =
+                                        (medication.supplyRemainingPercentage ?: 0.0)
+                                            .toFloat() / 100f
                                 )
                             }
-                        )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -324,13 +349,12 @@ fun MedicationCardExpanded(
     supplyRemaining: Float
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFEDEAF1)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -476,37 +500,41 @@ fun MedicationCardExpanded(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToDeleteMedicationCard(
     medication: com.example.myapplication.data.UserMedication,
     onDelete: (String) -> Unit,
     content: @Composable () -> Unit
 ) {
-    var show by remember { mutableStateOf(true) }
+    var visible by remember { mutableStateOf(true) }
+
     val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { dismissValue ->
-            when (dismissValue) {
-                SwipeToDismissBoxValue.EndToStart -> {
-                    show = false
-                    onDelete(medication.id)
-                    true
-                }
-                else -> false
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                visible = false
+                onDelete(medication.id)
+                true
+            } else {
+                false
             }
         }
     )
 
     AnimatedVisibility(
-        visible = show,
+        visible = visible,
         exit = fadeOut() + shrinkVertically()
     ) {
         SwipeToDismissBox(
             state = dismissState,
+            enableDismissFromStartToEnd = false,
+            enableDismissFromEndToStart = true,
             backgroundContent = {
+                // Red background, always behind the card
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(vertical = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color(0xFFFF5252)),
                     contentAlignment = Alignment.CenterEnd
@@ -531,17 +559,17 @@ fun SwipeToDeleteMedicationCard(
                     }
                 }
             },
-            enableDismissFromStartToEnd = false,
-            enableDismissFromEndToStart = true
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                content()
+            content = {
+                // Foreground card: fully covers background when not swiping
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    content()
+                }
             }
-        }
+        )
     }
 }
 

@@ -95,7 +95,6 @@ fun ScanMedicationScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
                 ) {
                     when {
                         cameraPermissionGranted == null -> {
@@ -528,89 +527,107 @@ fun ManualEntryWithResultsContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)                                      // inner padding only
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Search Medications",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Search Medications",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary                )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = ndcText,
-                onValueChange = {
-                    if (it.length <= 50) {
-                        ndcText = it
-                        showError = false
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("NDC Code or Medication Name") },
-                placeholder = { Text("e.g., 0378-6208-93 or Aspirin") },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF2E7D32)) },
-                isError = showError,
-                supportingText = {
-                    if (showError) {
-                        Text("Please enter a valid NDC or medication name", color = MaterialTheme.colorScheme.error)
-                    } else {
-                        Text("Accepts dashes: 12345-678-90")
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onDone = {
+                OutlinedTextField(
+                    value = ndcText,
+                    onValueChange = {
+                        if (it.length <= 50) {
+                            ndcText = it
+                            showError = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("NDC Code or Medication Name") },
+                    placeholder = { Text("e.g., 0378-6208-93 or Aspirin") },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF2E7D32)) },
+                    isError = showError,
+                    supportingText = {
+                        if (showError) {
+                            Text(
+                                "Please enter a valid NDC or medication name",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            Text("Accepts dashes: 12345-678-90")
+                        }
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            val trimmed = ndcText.trim()
+                            if (trimmed.isNotEmpty()) {
+                                onSearch(trimmed)
+                            } else {
+                                showError = true
+                            }
+                        }
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
                         val trimmed = ndcText.trim()
                         if (trimmed.isNotEmpty()) {
                             onSearch(trimmed)
                         } else {
                             showError = true
                         }
-                    }
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = {
-                    val trimmed = ndcText.trim()
-                    if (trimmed.isNotEmpty()) {
-                        onSearch(trimmed)
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isProcessing
+                ) {
+                    if (isProcessing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("SEARCHING...", fontWeight = FontWeight.Bold)
                     } else {
-                        showError = true
+                        Icon(Icons.Default.Search, null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("SEARCH", fontWeight = FontWeight.Bold)
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),                shape = RoundedCornerShape(12.dp),
-                enabled = !isProcessing
-            ) {
-                if (isProcessing) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("SEARCHING...", fontWeight = FontWeight.Bold)
-                } else {
-                    Icon(Icons.Default.Search, null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("SEARCH", fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -30,6 +30,11 @@ import com.example.myapplication.viewmodel.ProfileViewModel
 import com.example.myapplication.viewmodel.ProfileUpdateState
 import com.example.myapplication.theme.ScreenContainer
 import com.example.myapplication.theme.CareCapsuleTheme
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 
 // Simple profile model for this screen
 data class UserProfile(

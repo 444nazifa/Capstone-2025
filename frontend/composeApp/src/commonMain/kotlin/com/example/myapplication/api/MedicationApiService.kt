@@ -8,11 +8,14 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import com.example.myapplication.BASE_URL
+
 
 class MedicationApiService private constructor() {
-    private val baseUrl: String = "http://localhost:3015"
-
     companion object {
+        private val baseUrl = BASE_URL
+        fun create(): MedicationApiService = MedicationApiService()
+
         val shared: MedicationApiService by lazy {
             MedicationApiService()
         }

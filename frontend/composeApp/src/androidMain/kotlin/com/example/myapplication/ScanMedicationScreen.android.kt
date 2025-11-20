@@ -22,6 +22,12 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executors
+import com.example.myapplication.api.MedicationApiService
+import com.example.myapplication.storage.createSecureStorage
+import kotlinx.coroutines.withContext
+import com.example.myapplication.data.CreateMedicationRequest
+import com.example.myapplication.data.UserSession
+import kotlinx.coroutines.withContext
 
 private var globalImageCapture: ImageCapture? = null
 
@@ -197,69 +203,44 @@ actual suspend fun searchMedicationsByNDC(ndc: String): com.example.myapplicatio
     }
 }
 
-actual suspend fun addMedicationToUserList(request: com.example.myapplication.data.CreateMedicationRequest): Boolean = withContext(Dispatchers.IO) {
+actual suspend fun addMedicationToUserList(
+    request: CreateMedicationRequest
+): Boolean = withContext(Dispatchers.IO) {
     try {
-        val client = OkHttpClient()
-
-        // Get the auth token from UserSession
-        val token = com.example.myapplication.data.UserSession.authToken.value ?: run {
-            Log.e("API", "No auth token available")
+        val token = UserSession.authToken.value ?: run {
+            Log.e("AddMedication", "No auth token available")
             return@withContext false
         }
 
-        val json = kotlinx.serialization.json.Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-            explicitNulls = false  // Don't serialize null values
-        }
-
-        // Ensure we always send a start_date (default to today) so the calendar doesn't show past dots
         val today = try {
-            // Avoid java.time to keep minSdk compatibility. Use Calendar and Locale to format yyyy-MM-dd
             val cal = java.util.Calendar.getInstance()
             val y = cal.get(java.util.Calendar.YEAR)
             val m = cal.get(java.util.Calendar.MONTH) + 1
             val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
             java.util.Locale.US.let { String.format(it, "%04d-%02d-%02d", y, m, d) }
         } catch (_: Exception) {
-            // fallback to a safe static date if something goes wrong
             "1970-01-01"
         }
 
-        val requestToSend = if (request.startDate.isNullOrBlank()) {
-            request.copy(startDate = today)
-        } else request
+        val requestToSend =
+            if (request.startDate.isNullOrBlank()) request.copy(startDate = today)
+            else request
 
-        val jsonBody = json.encodeToString(
-            com.example.myapplication.data.CreateMedicationRequest.serializer(),
-            requestToSend
-        )
+        Log.d("AddMedication", "Sending to mock backend: $requestToSend")
 
-        Log.d("API", "Sending medication request: $jsonBody")
+        // ✔ CORRECT INSTANCE CALL
+        val api = MedicationApiService.shared
+        val result = api.createMedication(token, requestToSend)
 
-        // Add medication to user's list
-        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medications/user"
-        val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-        val addRequest = Request.Builder()
-            .url(url)
-            .addHeader("Authorization", "Bearer $token")
-            .post(requestBody)
-            .build()
-
-        val response = client.newCall(addRequest).execute()
-
-        if (response.isSuccessful) {
-            val responseBody = response.body?.string()
-            Log.d("API", "Medication added successfully: $responseBody")
-            true
-        } else {
-            val errorBody = response.body?.string()
-            Log.e("API", "Failed to add medication: ${response.code} - $errorBody")
-            Log.e("API", "Request body was: $jsonBody")
-            false
+        result.onSuccess { med ->
+            Log.d("AddMedication", "Medication created: $med")
+        }.onFailure { e ->
+            Log.e("AddMedication", "Error creating medication", e)
         }
+
+        result.isSuccess
     } catch (e: Exception) {
-        Log.e("API", "Failed to add medication", e)
+        Log.e("AddMedication", "Failed to add medication", e)
         false
     }
 }
