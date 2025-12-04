@@ -55,12 +55,6 @@ fun MedicationScreen(
     val error by viewModel.error.collectAsState()
 
     val scrollState = rememberScrollState()
-
-    ScreenContainer(
-        modifier = modifier,
-    ) {
-        // 🟢 Title
-        BoxWithConstraints(
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Show error in snackbar
@@ -76,36 +70,35 @@ fun MedicationScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Surface(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            color = Color.White
+        ScreenContainer(
+            modifier = modifier.padding(paddingValues),
         ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        ) {
-            // maxWidth is the ACTUAL available width inside ScreenContainer
-            val fontSize = when {
-                maxWidth < 320.dp -> 20.sp
-                maxWidth < 380.dp -> 24.sp
-                maxWidth < 440.dp -> 27.sp
-                else -> 30.sp
-            }
-
-            Text(
-                text = "Prescription Information",
+            BoxWithConstraints(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize,
-                    lineHeight = fontSize * 1.15f
-                ),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            ) {
+                // maxWidth is the ACTUAL available width inside ScreenContainer
+                val fontSize = when {
+                    maxWidth < 320.dp -> 20.sp
+                    maxWidth < 380.dp -> 24.sp
+                    maxWidth < 440.dp -> 27.sp
+                    else -> 30.sp
+                }
+
+                Text(
+                    text = "Prescription Information",
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = fontSize,
+                        lineHeight = fontSize * 1.15f
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
         // 🔹 Subtitle
         Text(
@@ -226,7 +219,7 @@ fun MedicationScreen(
                     medications.forEach { medication ->
                         SwipeToDeleteMedicationCard(
                             medication = medication,
-                            onDelete = { viewModel.deleteMedication(it) },
+                            onDelete = { id, onComplete -> viewModel.deleteMedication(id, onComplete) },
                             content = {
                                 MedicationCardExpanded(
                                     name = medication.medicationName,
@@ -248,31 +241,6 @@ fun MedicationScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-                        }
-                    } else {
-                        medications.forEach { medication ->
-                            SwipeToDeleteMedicationCard(
-                                medication = medication,
-                                onDelete = { id, onComplete -> viewModel.deleteMedication(id, onComplete) },
-                                content = {
-                                    MedicationCardExpanded(
-                                        name = medication.medicationName,
-                                        dosage = medication.dosage,
-                                        frequency = medication.frequency,
-                                        time = medication.schedules?.firstOrNull()?.scheduledTime?.let { formatTime(it) } ?: "Not scheduled",
-                                        nextRefill = medication.nextRefillDate ?: "Not set",
-                                        doctor = medication.doctorName ?: "Unknown",
-                                        pharmacy = medication.pharmacyName ?: "Unknown",
-                                        color = parseColor(medication.color),
-                                        supplyRemaining = (medication.supplyRemainingPercentage ?: 0.0).toFloat() / 100f
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
         }
     }
 }

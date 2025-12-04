@@ -28,13 +28,6 @@ import com.example.myapplication.viewmodel.ForgotPasswordViewModel
 import com.example.myapplication.theme.CareCapsuleTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.myapplication.viewmodel.ForgotPasswordViewModel
-import myapplication.composeapp.generated.resources.Res
-import myapplication.composeapp.generated.resources.login_background
-import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun ForgotPasswordScreen(

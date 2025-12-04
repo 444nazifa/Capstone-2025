@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 
 class HomeViewModel(
-    private val medicationApi: MedicationApiService = MedicationApiService.shared,
+    private val medicationApi: MedicationApiService = MedicationApiService.getInstance(),
     private val secureStorage: SecureStorage
 ) : ViewModel() {
 
