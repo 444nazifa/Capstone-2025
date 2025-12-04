@@ -48,11 +48,27 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
     val medications by viewModel.filteredMedications.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color.White
-    ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show error in snackbar
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            color = Color.White
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -209,7 +225,7 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                         medications.forEach { medication ->
                             SwipeToDeleteMedicationCard(
                                 medication = medication,
-                                onDelete = { viewModel.deleteMedication(it) },
+                                onDelete = { id, onComplete -> viewModel.deleteMedication(id, onComplete) },
                                 content = {
                                     MedicationCardExpanded(
                                         name = medication.medicationName,
@@ -228,6 +244,7 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                     }
                 }
             }
+        }
         }
     }
 }
@@ -480,7 +497,7 @@ fun MedicationCardExpanded(
 @Composable
 fun SwipeToDeleteMedicationCard(
     medication: com.example.myapplication.data.UserMedication,
-    onDelete: (String) -> Unit,
+    onDelete: (String, (Boolean) -> Unit) -> Unit,
     content: @Composable () -> Unit
 ) {
     var show by remember { mutableStateOf(true) }
@@ -488,8 +505,12 @@ fun SwipeToDeleteMedicationCard(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
                 SwipeToDismissBoxValue.EndToStart -> {
-                    show = false
-                    onDelete(medication.id)
+                    // Call onDelete and only hide if it succeeds
+                    onDelete(medication.id) { success ->
+                        if (success) {
+                            show = false
+                        }
+                    }
                     true
                 }
                 else -> false
