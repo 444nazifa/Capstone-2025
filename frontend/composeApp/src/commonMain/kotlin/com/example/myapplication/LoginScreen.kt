@@ -26,6 +26,7 @@ import myapplication.composeapp.generated.resources.care_capsule_logo
 import myapplication.composeapp.generated.resources.login_background
 import com.example.myapplication.viewmodel.LoginViewModel
 import com.example.myapplication.data.AuthState
+import com.example.myapplication.theme.CareCapsuleTheme
 
 
 @Composable
@@ -102,7 +103,7 @@ fun LoginScreen(
                 // Title
                 Text(
                     text = "Log In",
-                    color = Color(0xFF2E7D32),
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -260,7 +261,7 @@ fun LoginScreen(
                             TextButton(onClick = onForgotPassword) {
                                 Text(
                                     text = "Forgot Password?",
-                                    color = Color(0xFF388E3C),
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -274,7 +275,7 @@ fun LoginScreen(
                             TextButton(onClick = onCreateAccount) {
                                 Text(
                                     text = "Create an Account",
-                                    color = Color(0xFF388E3C),
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -295,4 +296,17 @@ private fun isValidEmail(s: String): Boolean {
 
 private fun isValidPassword(password: String): Boolean {
     return password.length >= 8
+}
+
+@Preview
+@Composable
+fun LoginScreenPreview() {
+    CareCapsuleTheme {
+        LoginScreen(
+            onLoginSuccess = {},
+            onForgotPassword = {},
+            onCreateAccount = {},
+            onReregisterNotifications = { false }
+        )
+    }
 }

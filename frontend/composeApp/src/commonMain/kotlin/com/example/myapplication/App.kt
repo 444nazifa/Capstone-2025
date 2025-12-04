@@ -16,7 +16,6 @@ import com.example.myapplication.viewmodel.HomeViewModel
 import com.example.myapplication.viewmodel.MedicationViewModel
 import com.example.myapplication.viewmodel.ScanMedicationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.data.UserSession
 import com.example.myapplication.storage.createSecureStorage
 
@@ -51,7 +50,7 @@ fun App(
         }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
 
-        // Watch for session changes and redirect to login when the user is signed out
+        // 🔐 Session-driven routing with guards in both directions
         LaunchedEffect(currentUser) {
             if (currentUser == null && currentScreen != "resetPassword" && currentScreen != "forgotPassword") {
                 currentScreen = "login"
@@ -62,8 +61,6 @@ fun App(
 
         Surface(color = MaterialTheme.colorScheme.background) {
             when (currentScreen) {
-
-                // Login screen first
                 "login" -> LoginScreen(
                     onLoginSuccess = { },
                     onForgotPassword = { currentScreen = "forgotPassword" },
@@ -71,9 +68,8 @@ fun App(
                     onReregisterNotifications = onEnableNotifications
                 )
 
-                // Create Account Screen
                 "createAccount" -> CreateAccountScreen(
-                    onSignUpSuccess = { currentScreen = "main" },
+                    onSignUpSuccess = { /* session watcher will flip to main */ },
                     onLoginClick = { currentScreen = "login" }
                 )
 
@@ -161,21 +157,28 @@ fun MainApp(
         }
     ) { innerPadding ->
         when (selectedTab) {
-            "home" -> HomeScreen(homeViewModel)
-            "medications" -> MedicationScreen(medicationViewModel, modifier = Modifier.padding(innerPadding))
-            "scan" ->    ScanMedicationScreen(
+            "home" -> HomeScreen(
+                viewModel = homeViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
+            "medications" -> MedicationScreen(
+                viewModel = medicationViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
+
+            "scan" -> ScanMedicationScreen(
                 viewModel = scanMedicationViewModel,
-                showBackButton = false, // ← No back button
+                showBackButton = false,
                 onBarcodeScanned = { barcode ->
-                    // print the scanned barcode
                     println("Scanned barcode: $barcode")
                 },
                 onMedicationAdded = {
-                    // Refresh both home and medication screens
                     homeViewModel.loadMedications()
                     medicationViewModel.loadMedicationData()
-                }
+                },
+                modifier = Modifier.padding(innerPadding)   // ← important
             )
+
             "profile" -> ProfileScreen(
                 modifier = Modifier.padding(innerPadding),
                 onSignOut = onSignOut,

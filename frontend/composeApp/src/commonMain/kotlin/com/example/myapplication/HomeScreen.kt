@@ -13,115 +13,105 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import com.example.myapplication.viewmodel.HomeViewModel
-import com.example.myapplication.storage.createSecureStorage
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.viewmodel.HomeViewModel
+import com.example.myapplication.storage.SecureStorage
 import com.example.myapplication.theme.CareCapsuleTheme
+import com.example.myapplication.theme.ScreenContainer
 import kotlinx.datetime.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
+fun HomeScreen(viewModel: HomeViewModel, modifier: Modifier = Modifier) {
     val medications by viewModel.medications.collectAsState()
     val currentDate by viewModel.currentDate.collectAsState()
     val weekOffset by viewModel.weekOffset.collectAsState()
     val weekDays by remember(currentDate) { mutableStateOf(viewModel.getWeekDays()) }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    ScreenContainer(modifier = modifier) {
 
-            // ─────────────── Header + Calendar ───────────────
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 55.dp, bottom = 16.dp)
-            ) {
-                Text(
-                    text = "My Prescriptions",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 28.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary
-                )
+        // -------- Header + calendar --------
+        Text(
+            text = "My Prescriptions",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 28.sp
+            ),
+            color = MaterialTheme.colorScheme.primary
+        )
 
-                Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-                WeeklyCalendarCardStyled(
-                    weekOffset = weekOffset,
-                    currentDate = currentDate,
-                    weekDays = weekDays,
-                    isToday = viewModel::isToday,
-                    onNavigateWeek = viewModel::navigateWeek,
-                    viewModel = viewModel
-                )
-            }
+        WeeklyCalendarCardStyled(
+            weekOffset = weekOffset,
+            currentDate = currentDate,
+            weekDays = weekDays,
+            isToday = viewModel::isToday,
+            onNavigateWeek = viewModel::navigateWeek,
+            viewModel = viewModel
+        )
 
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // -------- Scrollable medication list --------
+        val scrollState = rememberScrollState()
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(scrollState)
+                .padding(bottom = 120.dp)
+        ) {
+            Text(
+                text = "Today's Medication",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 25.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            val scrollState = rememberScrollState()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 120.dp)
-            ) {
-                Column {
-                    Text(
-                        text = "Today's Medication",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 25.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(top = 20.dp)
-                    )
+            Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
+            val upcomingMedications: List<MedicationReminder> = medications.filter { !it.taken }
+            val completedMedications: List<MedicationReminder> = medications.filter { it.taken }
 
-                    val upcomingMedications: List<MedicationReminder> = medications.filter { !it.taken }
-                    val completedMedications: List<MedicationReminder> = medications.filter { it.taken }
+            // UPCOMING MEDICATION SECTION
+            SectionHeader(
+                icon = Icons.Default.ErrorOutline,
+                iconColor = Color(0xFFD32F2F),
+                label = "Upcoming (${upcomingMedications.size})"
+            )
 
-                    // UPCOMING SECTION
-                    SectionHeader(
-                        icon = Icons.Default.ErrorOutline,
-                        iconColor = Color(0xFFD32F2F),
-                        label = "Upcoming (${upcomingMedications.size})"
-                    )
+            upcomingMedications.forEach { med: MedicationReminder ->
+                MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
-                    upcomingMedications.forEach { med: MedicationReminder ->
-                        MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
+            Spacer(modifier = Modifier.height(10.dp))
 
-                    Spacer(modifier = Modifier.height(10.dp))
+            // COMPLETED SECTION
+            SectionHeader(
+                icon = Icons.Default.Check,
+                iconColor = Color(0xFF388E3C),
+                label = "Completed (${completedMedications.size})"
+            )
 
-                    // COMPLETED SECTION
-                    SectionHeader(
-                        icon = Icons.Default.Check,
-                        iconColor = Color(0xFF388E3C),
-                        label = "Completed (${completedMedications.size})"
-                    )
-
-                    completedMedications.forEach { med: MedicationReminder ->
-                        MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
-                }
+            completedMedications.forEach { med: MedicationReminder ->
+                MedicationItemStyled(med) { viewModel.toggleMedication(med.id) }
+                Spacer(modifier = Modifier.height(10.dp))
             }
         }
     }
@@ -132,11 +122,11 @@ fun SectionHeader(icon: ImageVector, iconColor: Color, label: String) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = iconColor,
-                    modifier = Modifier.size(25.dp)
-                )
+                imageVector = icon,
+                contentDescription = label,
+                tint = iconColor,
+                modifier = Modifier.size(25.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
@@ -148,8 +138,6 @@ fun SectionHeader(icon: ImageVector, iconColor: Color, label: String) {
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
-
-
 
 @Composable
 fun WeeklyCalendarCardStyled(
@@ -336,6 +324,18 @@ fun MedicationItemStyled(medication: MedicationReminder, onToggle: () -> Unit) {
 @Composable
 fun HomeScreenPreview() {
     CareCapsuleTheme {
-        HomeScreen(HomeViewModel(secureStorage = createSecureStorage()))
+        val previewStorage = remember {
+            object : SecureStorage {
+                private val data = mutableMapOf<String, String>()
+                override fun saveString(key: String, value: String) { data[key] = value }
+                override fun getString(key: String): String? = data[key]
+                override fun remove(key: String) { data.remove(key) }
+                override fun clear() { data.clear() }
+            }
+        }
+
+        val previewViewModel = remember { HomeViewModel(secureStorage = previewStorage) }
+
+        HomeScreen(previewViewModel)
     }
 }
