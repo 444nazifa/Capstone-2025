@@ -52,6 +52,7 @@ fun MedicationScreen(
     val medications by viewModel.filteredMedications.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     val scrollState = rememberScrollState()
 
@@ -60,6 +61,26 @@ fun MedicationScreen(
     ) {
         // 🟢 Title
         BoxWithConstraints(
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show error in snackbar
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            color = Color.White
+        ) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
@@ -227,6 +248,32 @@ fun MedicationScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    } else {
+                        medications.forEach { medication ->
+                            SwipeToDeleteMedicationCard(
+                                medication = medication,
+                                onDelete = { id, onComplete -> viewModel.deleteMedication(id, onComplete) },
+                                content = {
+                                    MedicationCardExpanded(
+                                        name = medication.medicationName,
+                                        dosage = medication.dosage,
+                                        frequency = medication.frequency,
+                                        time = medication.schedules?.firstOrNull()?.scheduledTime?.let { formatTime(it) } ?: "Not scheduled",
+                                        nextRefill = medication.nextRefillDate ?: "Not set",
+                                        doctor = medication.doctorName ?: "Unknown",
+                                        pharmacy = medication.pharmacyName ?: "Unknown",
+                                        color = parseColor(medication.color),
+                                        supplyRemaining = (medication.supplyRemainingPercentage ?: 0.0).toFloat() / 100f
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        }
     }
 }
 
@@ -479,7 +526,7 @@ fun MedicationCardExpanded(
 @Composable
 fun SwipeToDeleteMedicationCard(
     medication: com.example.myapplication.data.UserMedication,
-    onDelete: (String) -> Unit,
+    onDelete: (String, (Boolean) -> Unit) -> Unit,
     content: @Composable () -> Unit
 ) {
     var show by remember { mutableStateOf(true) }
@@ -487,8 +534,12 @@ fun SwipeToDeleteMedicationCard(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
                 SwipeToDismissBoxValue.EndToStart -> {
-                    show = false
-                    onDelete(medication.id)
+                    // Call onDelete and only hide if it succeeds
+                    onDelete(medication.id) { success ->
+                        if (success) {
+                            show = false
+                        }
+                    }
                     true
                 }
                 else -> false

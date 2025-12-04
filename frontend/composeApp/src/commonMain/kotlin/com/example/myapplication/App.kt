@@ -23,12 +23,21 @@ import com.example.myapplication.storage.createSecureStorage
 fun App(
     onEnableNotifications: suspend () -> Boolean = { false },
     onDisableNotifications: suspend () -> Boolean = { false },
-    isNotificationsEnabled: () -> Boolean = { false }
+    isNotificationsEnabled: () -> Boolean = { false },
+    initialRoute: String? = null,
+    resetToken: String? = null
 ) {
     CareCapsuleTheme {
         val currentUser by UserSession.currentUser.collectAsState()
+        val initialScreen = when {
+            resetToken != null -> "resetPassword"
+            initialRoute != null -> initialRoute
+            currentUser != null -> "main"
+            else -> "login"
+        }
 
-        var currentScreen by remember { mutableStateOf("login") }
+        var currentScreen by remember { mutableStateOf(initialScreen) }
+        var passwordResetToken by remember { mutableStateOf(resetToken) }
         val secureStorage = remember { createSecureStorage() }
         val homeViewModel = remember { HomeViewModel(secureStorage = secureStorage) }
         val medicationViewModel = remember {
@@ -43,11 +52,9 @@ fun App(
 
         // 🔐 Session-driven routing with guards in both directions
         LaunchedEffect(currentUser) {
-            if (currentUser == null && currentScreen == "main") {
-                // user signed out → force to login
+            if (currentUser == null && currentScreen != "resetPassword" && currentScreen != "forgotPassword") {
                 currentScreen = "login"
-            } else if (currentUser != null && currentScreen == "login") {
-                // user signed in → go to main (but don't hijack forgot/create screens)
+            } else if (currentUser != null && currentScreen !in listOf("resetPassword", "forgotPassword")) {
                 currentScreen = "main"
             }
         }
@@ -56,8 +63,8 @@ fun App(
             when (currentScreen) {
                 "login" -> LoginScreen(
                     onLoginSuccess = { },
-                    onForgotPassword = { /* later feature */ },
-                    onCreateAccount = { currentScreen = "createAccount" }, // Go to Create Account
+                    onForgotPassword = { currentScreen = "forgotPassword" },
+                    onCreateAccount = { currentScreen = "createAccount" },
                     onReregisterNotifications = onEnableNotifications
                 )
 
@@ -66,6 +73,28 @@ fun App(
                     onLoginClick = { currentScreen = "login" }
                 )
 
+                // Forgot Password Screen
+                "forgotPassword" -> ForgotPasswordScreen(
+                    onBackToLogin = { currentScreen = "login" }
+                )
+
+                // Reset Password Screen
+                "resetPassword" -> {
+                    if (passwordResetToken != null) {
+                        ResetPasswordScreen(
+                            resetToken = passwordResetToken!!,
+                            onPasswordResetSuccess = { currentScreen = "login" },
+                            onBackToLogin = { currentScreen = "login" }
+                        )
+                    } else {
+                        // If no token, redirect to login
+                        LaunchedEffect(Unit) {
+                            currentScreen = "login"
+                        }
+                    }
+                }
+
+                // Main app (your bottom navigation)
                 "main" -> MainApp(
                     homeViewModel = homeViewModel,
                     medicationViewModel = medicationViewModel,

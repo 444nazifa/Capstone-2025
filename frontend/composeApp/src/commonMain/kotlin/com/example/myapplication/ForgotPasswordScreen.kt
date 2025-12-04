@@ -7,6 +7,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +27,14 @@ import myapplication.composeapp.generated.resources.login_background
 import com.example.myapplication.viewmodel.ForgotPasswordViewModel
 import com.example.myapplication.theme.CareCapsuleTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.viewmodel.ForgotPasswordViewModel
+import myapplication.composeapp.generated.resources.Res
+import myapplication.composeapp.generated.resources.login_background
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun ForgotPasswordScreen(

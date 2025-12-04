@@ -8,13 +8,17 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-
-class MedicationApiService private constructor() {
-    private val baseUrl: String = "http://localhost:3015"
-
+class MedicationApiService private constructor(
+    private val baseUrl: String = "https://backend-ts-theta.vercel.app"
+) {
     companion object {
-        val shared: MedicationApiService by lazy {
-            MedicationApiService()
+        private var instance: MedicationApiService? = null
+
+        fun getInstance(context: Any? = null): MedicationApiService {
+            // Simple singleton without synchronized - safe for single-threaded UI
+            return instance ?: MedicationApiService().also {
+                instance = it
+            }
         }
     }
 

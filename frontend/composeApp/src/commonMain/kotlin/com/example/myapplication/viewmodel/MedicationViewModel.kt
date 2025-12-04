@@ -96,13 +96,14 @@ class MedicationViewModel(
         }
     }
 
-    fun deleteMedication(medicationId: String) {
+    fun deleteMedication(medicationId: String, onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             _error.value = null
 
             val token = secureStorage.getToken()
             if (token.isNullOrEmpty()) {
                 _error.value = "Not authenticated"
+                onComplete(false)
                 return@launch
             }
 
@@ -120,9 +121,12 @@ class MedicationViewModel(
 
                     // Notify home screen to refresh
                     onMedicationDeleted?.invoke()
+
+                    onComplete(true)
                 }
                 .onFailure { exception ->
                     _error.value = exception.message
+                    onComplete(false)
                 }
         }
     }
