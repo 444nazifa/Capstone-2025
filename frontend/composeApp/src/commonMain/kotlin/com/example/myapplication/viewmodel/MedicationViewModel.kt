@@ -96,6 +96,56 @@ class MedicationViewModel(
         }
     }
 
+    fun updateMedication(updatedMedication: UserMedication, onComplete: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            _error.value = null
+
+            val token = secureStorage.getToken()
+            if (token.isNullOrEmpty()) {
+                _error.value = "Not authenticated"
+                onComplete(false)
+                return@launch
+            }
+
+            // Build the update map with all fields that can be updated
+            val updates = mutableMapOf<String, Any>()
+
+            updates["medication_name"] = updatedMedication.medicationName
+            updates["dosage"] = updatedMedication.dosage
+            updates["frequency"] = updatedMedication.frequency
+            updates["start_date"] = updatedMedication.startDate
+
+            // Optional fields - only include if not null
+            updatedMedication.doctorName?.let { updates["doctor_name"] = it }
+            updatedMedication.pharmacyName?.let { updates["pharmacy_name"] = it }
+            updatedMedication.instructions?.let { updates["instructions"] = it }
+            updatedMedication.quantityTotal?.let { updates["quantity_total"] = it }
+            updatedMedication.quantityRemaining?.let { updates["quantity_remaining"] = it }
+            updatedMedication.refillReminderDays?.let { updates["refill_reminder_days"] = it }
+
+            medicationApi.updateMedication(token, updatedMedication.id, updates)
+                .onSuccess { updated ->
+                    // Update local state with the returned medication
+                    _medications.value = _medications.value.map { med ->
+                        if (med.id == updated.id) updated else med
+                    }
+                    filterMedications(_searchQuery.value)
+
+                    // Reload summary to update counts
+                    medicationApi.getMedicationSummary(token)
+                        .onSuccess { summary ->
+                            _summary.value = summary
+                        }
+
+                    onComplete(true)
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message
+                    onComplete(false)
+                }
+        }
+    }
+
     fun deleteMedication(medicationId: String, onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             _error.value = null

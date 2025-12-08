@@ -43,6 +43,10 @@ fun EditMedicationScreen(
 
     // Schedule
     var frequency by remember { mutableStateOf(medication.frequency) }
+    // Note: Schedule editing is currently read-only. To modify schedules,
+    // use the dedicated schedule management endpoints through the API.
+    // Full schedule CRUD operations require separate API calls to:
+    // - addSchedule, updateSchedule, deleteSchedule
     var scheduleTimes by remember {
         mutableStateOf(
             medication.schedules?.map { it.scheduledTime } ?: listOf("08:00")
@@ -156,7 +160,8 @@ fun EditMedicationScreen(
                             frequency = frequency,
                             onFrequencyChange = { frequency = it },
                             scheduleTimes = scheduleTimes,
-                            onScheduleTimesChange = { scheduleTimes = it }
+                            onScheduleTimesChange = { scheduleTimes = it },
+                            readOnly = false // Allow frequency edits, but schedule times are display-only
                         )
                     }
 
@@ -273,7 +278,8 @@ private fun ScheduleCard(
     frequency: String,
     onFrequencyChange: (String) -> Unit,
     scheduleTimes: List<String>,
-    onScheduleTimesChange: (List<String>) -> Unit
+    onScheduleTimesChange: (List<String>) -> Unit,
+    readOnly: Boolean = false
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -318,6 +324,35 @@ private fun ScheduleCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Dosing Times", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Informational note about schedule management
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Text(
+                        "Schedule times are shown for reference. To modify schedules, please create a new medication or contact support.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             scheduleTimes.forEachIndexed { index, time ->
@@ -341,18 +376,21 @@ private fun ScheduleCard(
                             onScheduleTimesChange(updated)
                         },
                         modifier = Modifier.weight(1f),
-                        label = { Text("Time (HH:MM)") }
+                        label = { Text("Time (HH:MM)") },
+                        enabled = readOnly.not(), // Disable if read-only
+                        readOnly = true // Make read-only for now
                     )
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    if (scheduleTimes.size > 1) {
+                    if (scheduleTimes.size > 1 && !readOnly) {
                         TextButton(
                             onClick = {
                                 val updated = scheduleTimes.toMutableList()
                                 updated.removeAt(index)
                                 onScheduleTimesChange(updated)
-                            }
+                            },
+                            enabled = false // Disabled for now
                         ) {
                             Text("Remove")
                         }
@@ -362,15 +400,18 @@ private fun ScheduleCard(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            OutlinedButton(
-                onClick = {
-                    val updated = scheduleTimes.toMutableList()
-                    updated.add("08:00")
-                    onScheduleTimesChange(updated)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Add Time")
+            if (!readOnly) {
+                OutlinedButton(
+                    onClick = {
+                        val updated = scheduleTimes.toMutableList()
+                        updated.add("08:00")
+                        onScheduleTimesChange(updated)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false // Disabled for now
+                ) {
+                    Text("Add Time")
+                }
             }
         }
     }

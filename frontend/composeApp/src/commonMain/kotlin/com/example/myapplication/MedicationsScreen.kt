@@ -43,6 +43,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifier) {
@@ -56,6 +58,7 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Show error in snackbar
     LaunchedEffect(error) {
@@ -254,9 +257,24 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                 medication = med,
                 onBack = { editingMedication = null },
                 onSave = { updated ->
-                    viewModel.updateMedication(updated)
-                    viewModel.loadMedicationData()
-                    editingMedication = null
+                    viewModel.updateMedication(updated) { success ->
+                        if (success) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Medication updated successfully",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                            editingMedication = null
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Failed to update medication: ${viewModel.error.value}",
+                                    duration = SnackbarDuration.Long
+                                )
+                            }
+                        }
+                    }
                 }
             )
         }
@@ -590,5 +608,3 @@ fun MedicationScreenPreview() {
         MedicationScreen(MedicationViewModel(secureStorage = createSecureStorage()))
     }
 }
-
-fun MedicationViewModel.updateMedication(updated: UserMedication) {}
