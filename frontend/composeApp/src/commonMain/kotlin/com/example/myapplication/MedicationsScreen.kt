@@ -1,5 +1,7 @@
 package com.example.myapplication
 
+import com.example.myapplication.EditMedicationScreen
+import com.example.myapplication.data.UserMedication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -49,6 +51,9 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    var editingMedication by remember {
+        mutableStateOf<com.example.myapplication.data.UserMedication?>(null)
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -232,7 +237,8 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                                                 doctor = medication.doctorName ?: "Unknown",
                                                 pharmacy = medication.pharmacyName ?: "Unknown",
                                                 color = parseColor(medication.color),
-                                                supplyRemaining = (medication.supplyRemainingPercentage ?: 0.0).toFloat() / 100f
+                                                supplyRemaining = (medication.supplyRemainingPercentage ?: 0.0).toFloat() / 100f,
+                                                onEditClick = { editingMedication = medication }
                                             )
                                         }
                                     )
@@ -242,6 +248,17 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                     }
                 }
             }
+        }
+        editingMedication?.let { med ->
+            EditMedicationScreen(
+                medication = med,
+                onBack = { editingMedication = null },
+                onSave = { updated ->
+                    viewModel.updateMedication(updated)
+                    viewModel.loadMedicationData()
+                    editingMedication = null
+                }
+            )
         }
     }
 }
@@ -339,7 +356,8 @@ fun MedicationCardExpanded(
     doctor: String,
     pharmacy: String,
     color: Color,
-    supplyRemaining: Float
+    supplyRemaining: Float,
+    onEditClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -384,7 +402,7 @@ fun MedicationCardExpanded(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clickable { /* TODO: handle edit click */ }
+                        .clickable { onEditClick() }
                         .padding(vertical = 0.dp)
                 ) {
                     Icon(
@@ -572,3 +590,5 @@ fun MedicationScreenPreview() {
         MedicationScreen(MedicationViewModel(secureStorage = createSecureStorage()))
     }
 }
+
+fun MedicationViewModel.updateMedication(updated: UserMedication) {}
