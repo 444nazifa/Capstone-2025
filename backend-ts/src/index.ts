@@ -11,6 +11,8 @@ import reminderRoutes from './routes/reminders';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import firebaseService from './services/firebase.service';
 import reminderScheduler from './services/reminder-scheduler.service';
+import chatRouter from "./routes/chat";
+
 
 dotenv.config();
 
@@ -31,6 +33,7 @@ app.use(cors());
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use("/chat", chatRouter);
 
 // Initialize Firebase for push notifications
 firebaseService.initializeFirebase();
