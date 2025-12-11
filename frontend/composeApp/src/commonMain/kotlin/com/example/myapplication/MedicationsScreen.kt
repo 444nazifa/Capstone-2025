@@ -74,8 +74,7 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                     .fillMaxSize()
                     .then(modifier)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 40.dp)
-                    .padding(top = 10.dp)
+                    .padding(horizontal = 24.dp)
             ) {
                 // 🟢 Title with Responsive Font Sizing
                 BoxWithConstraints(
