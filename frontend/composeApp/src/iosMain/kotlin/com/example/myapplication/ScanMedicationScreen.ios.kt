@@ -245,7 +245,7 @@ actual suspend fun searchMedicationsByNDC(ndc: String): com.example.myapplicatio
                 })
             }
         }
-        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medication/search/ndc?ndc=$ndc"
+        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medication/search/?query=$ndc"
 
         val response: HttpResponse = client.get(url)
 
