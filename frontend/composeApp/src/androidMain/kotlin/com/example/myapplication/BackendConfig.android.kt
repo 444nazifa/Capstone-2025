@@ -1,5 +1,5 @@
 package com.example.myapplication
 
-// Android emulator -> backend on your Mac
+// Android chatbot -> TypeScript backend on Vercel
 actual fun backendBaseUrl(): String =
-    "http://10.0.2.2:3015/chat"
+    "https://backend-ts-theta.vercel.app/chat"

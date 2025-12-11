@@ -159,6 +159,8 @@ fun ScanMedicationScreen(
                                             isProcessing = false
                                             if (response != null && response.success && !response.data.isNullOrEmpty()) {
                                                 searchResults = response.data
+                                                // Switch to manual entry view to display results
+                                                showManualEntry = true
                                             } else {
                                                 errorMessage = response?.error
                                                     ?: "No medications found for NDC: $ndc"

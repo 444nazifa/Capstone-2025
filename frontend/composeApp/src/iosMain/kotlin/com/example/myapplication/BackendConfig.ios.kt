@@ -1,4 +1,5 @@
 package com.example.myapplication
 
+// iOS chatbot -> TypeScript backend on Vercel
 actual fun backendBaseUrl(): String =
-    "http://127.0.0.1:3015/chat"
+    "https://backend-ts-theta.vercel.app/chat"

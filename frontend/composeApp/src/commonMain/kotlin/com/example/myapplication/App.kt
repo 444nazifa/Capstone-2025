@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.theme.CareCapsuleTheme
+import com.example.myapplication.viewmodel.ChatViewModel
 import com.example.myapplication.viewmodel.HomeViewModel
 import com.example.myapplication.viewmodel.MedicationViewModel
 import com.example.myapplication.viewmodel.ScanMedicationViewModel
@@ -53,6 +54,7 @@ fun App(
             )
         }
         val scanMedicationViewModel = remember { ScanMedicationViewModel() }
+        val chatViewModel = remember { ChatViewModel() }
 
         // 🔐 Session-driven routing with guards in both directions
         LaunchedEffect(currentUser) {
@@ -103,6 +105,7 @@ fun App(
                     homeViewModel = homeViewModel,
                     medicationViewModel = medicationViewModel,
                     scanMedicationViewModel = scanMedicationViewModel,
+                    chatViewModel = chatViewModel,
                     onSignOut = {
                         UserSession.logout()
                     },
@@ -120,6 +123,7 @@ fun MainApp(
     homeViewModel: HomeViewModel,
     medicationViewModel: MedicationViewModel,
     scanMedicationViewModel: ScanMedicationViewModel,
+    chatViewModel: ChatViewModel,
     onSignOut: () -> Unit = {},
     onEnableNotifications: suspend () -> Boolean = { false },
     onDisableNotifications: suspend () -> Boolean = { false },
@@ -193,6 +197,7 @@ fun MainApp(
             )
             "chat" -> ChatbotScreen(
                 modifier = Modifier.padding(innerPadding),
+                viewModel = chatViewModel,
                 reminders = medications,
                 medications = allMedications
             )

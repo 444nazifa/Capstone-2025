@@ -223,10 +223,28 @@ actual suspend fun sendImageToBackend(imageData: ByteArray): String? {
 
             try {
                 if (responseText.contains("\"qr_detected\":true") || responseText.contains("\"qr_detected\": true")) {
-                    val ndcRegex = Regex("\"ndc\"\\s*:\\s*\"([^\"]+)\"")
-                    val match = ndcRegex.find(responseText)
-                    match?.groupValues?.get(1) ?: "QR code detected"
+                    // Try to extract NDC from prescription_data.ndc_number first
+                    val ndcNumberRegex = Regex("\"ndc_number\"\\s*:\\s*\"([^\"]+)\"")
+                    val ndcMatch = ndcNumberRegex.find(responseText)
+                    if (ndcMatch != null) {
+                        val ndc = ndcMatch.groupValues[1]
+                        println("Extracted NDC from prescription_data: $ndc")
+                        ndc
+                    } else {
+                        // Fallback: try to extract from raw ndc field
+                        val ndcRegex = Regex("\"ndc\"\\s*:\\s*\"([^\"]+)\"")
+                        val match = ndcRegex.find(responseText)
+                        if (match != null) {
+                            val ndc = match.groupValues[1]
+                            println("Extracted NDC from raw data: $ndc")
+                            ndc
+                        } else {
+                            println("QR detected but no NDC found in response")
+                            null
+                        }
+                    }
                 } else {
+                    println("No QR code detected in image")
                     null
                 }
             } catch (e: Exception) {
@@ -253,7 +271,8 @@ actual suspend fun searchMedicationsByNDC(ndc: String): com.example.myapplicatio
                 })
             }
         }
-        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medication/search/?query=$ndc"
+        // Use the dedicated NDC search endpoint
+        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medication/search/ndc?ndc=$ndc"
 
         val response: HttpResponse = client.get(url)
 

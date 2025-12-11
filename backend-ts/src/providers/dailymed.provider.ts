@@ -79,84 +79,146 @@ export class DailyMedProvider {
       let { ndc } = params;
 
       // Remove any existing dashes
-      ndc = ndc.replace(/-/g, '');
+      const cleanNDC = ndc.replace(/-/g, '');
 
-      // Convert 11-digit NDC to 10-digit format and add dashes
-      // Format: XXXXX-XXXX-XX (11 digits) -> XXXXX-XXX-XX (10 digits with dashes)
-      let formattedNDC: string;
-      if (ndc.length === 11) {
-        // 5-4-2 format
-        const labeler = ndc.slice(0, 5);
-        const product = ndc.slice(5, 9);
-        const package_code = ndc.slice(9, 11);
+      // Try multiple NDC formats
+      const ndcFormats = [
+        ndc, // Original with dashes
+        cleanNDC, // Without dashes
+      ];
 
-        // Remove leading zero from product code to make it 10-digit
-        const trimmedProduct = product.startsWith('0') ? product.slice(1) : product;
-        formattedNDC = `${labeler}-${trimmedProduct}-${package_code}`;
-      } else if (ndc.length === 10) {
-        // Already 10 digits, just add dashes in 5-3-2 format
-        formattedNDC = `${ndc.slice(0, 5)}-${ndc.slice(5, 8)}-${ndc.slice(8, 10)}`;
-      } else {
-        // Try as-is
-        formattedNDC = ndc;
+      // Try 5-4-2 format
+      if (cleanNDC.length === 11) {
+        ndcFormats.push(`${cleanNDC.slice(0, 5)}-${cleanNDC.slice(5, 9)}-${cleanNDC.slice(9, 11)}`);
       }
 
-      const searchUrl = `${this.baseUrl}/spls.json`;
-      const searchParams = {
-        ndc: formattedNDC
-      };
-
-      const response: AxiosResponse = await axios.get(searchUrl, {
-        params: searchParams,
-        timeout: 10000
-      });
-
-      if (!response.data || !response.data.data) {
-        return {
-          success: false,
-          error: 'Invalid response format from DailyMed API'
-        };
+      // Try 5-3-2 format (10 digit)
+      if (cleanNDC.length === 10) {
+        ndcFormats.push(`${cleanNDC.slice(0, 5)}-${cleanNDC.slice(5, 8)}-${cleanNDC.slice(8, 10)}`);
       }
 
+      console.log(`Searching for NDC with formats:`, ndcFormats);
 
-      console.log(`data.length for NDC ${ndc}: ${response.data.data.length}`);
-      console.log(`metadata: ${JSON.stringify(response.data)}`);
-      // include the image in the response
-      const medications: MedicationSearchResult[] = await Promise.all(
-        response.data.data.map(async (item: any) => {
-          // Extract labeler from title (it's usually in brackets at the end)
-          const titleMatch = item.title.match(/\[([^\]]+)\]$/);
-          const labeler = titleMatch ? titleMatch[1] : 'Unknown';
-          
-          // Try to get first image for this medication
-          let image: string | undefined;
-          try {
-            const mediaUrl = `${this.baseUrl}/spls/${item.setid}/media.json`;
-            const mediaResponse = await axios.get(mediaUrl, { timeout: 5000 });
-            if (mediaResponse.data?.data?.media && Array.isArray(mediaResponse.data.data.media) && mediaResponse.data.data.media.length > 0) {
-              image = mediaResponse.data.data.media[0].url || undefined;
-            }
-          } catch (mediaError) {
-            // Images not critical for search results
-            console.log(`Failed to fetch images for medication ${item.setid}:`, mediaError instanceof Error ? mediaError.message : 'Unknown error');
+      // First try the API with different formats
+      for (const format of ndcFormats) {
+        const searchUrl = `${this.baseUrl}/spls.json`;
+        const searchParams = { ndc: format };
+
+        try {
+          const response: AxiosResponse = await axios.get(searchUrl, {
+            params: searchParams,
+            timeout: 10000
+          });
+
+          if (response.data?.data && response.data.data.length > 0) {
+            console.log(`Found ${response.data.data.length} results with NDC format: ${format}`);
+
+            const medications: MedicationSearchResult[] = await Promise.all(
+              response.data.data.map(async (item: any) => {
+                const titleMatch = item.title.match(/\[([^\]]+)\]$/);
+                const labeler = titleMatch ? titleMatch[1] : 'Unknown';
+
+                let image: string | undefined;
+                try {
+                  const mediaUrl = `${this.baseUrl}/spls/${item.setid}/media.json`;
+                  const mediaResponse = await axios.get(mediaUrl, { timeout: 5000 });
+                  if (mediaResponse.data?.data?.media && Array.isArray(mediaResponse.data.data.media) && mediaResponse.data.data.media.length > 0) {
+                    image = mediaResponse.data.data.media[0].url || undefined;
+                  }
+                } catch (mediaError) {
+                  console.log(`Failed to fetch images for medication ${item.setid}`);
+                }
+
+                return {
+                  setId: item.setid,
+                  title: item.title,
+                  ndc: [],
+                  image: image,
+                  labeler: labeler,
+                  published: item.published_date || '',
+                  updated: item.published_date || ''
+                };
+              })
+            );
+
+            return {
+              success: true,
+              data: medications,
+              total: response.data.metadata?.total || medications.length
+            };
           }
-          
-          return {
-            setId: item.setid,
-            title: item.title,
-            ndc: [], // NDC data not available in search results
-            image: image,
-            labeler: labeler,
-            published: item.published_date || '',
-            updated: item.published_date || ''
-          };
-        })
-      );
+        } catch (apiError) {
+          console.log(`API search failed for format ${format}`);
+        }
+      }
 
+      // If API search fails, try web scraping as fallback
+      console.log(`API search failed, trying web scraping for NDC: ${ndc}`);
+
+      try {
+        const searchUrl = `https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=${encodeURIComponent(ndc)}`;
+        const webResponse = await axios.get(searchUrl, {
+          timeout: 15000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; MedicationAPI/1.0)'
+          },
+          maxRedirects: 5
+        });
+
+        const html = webResponse.data;
+
+        // Extract setId from redirect or search results
+        const setIdMatch = html.match(/drugInfo\.cfm\?setid=([a-f0-9-]+)/i);
+
+        if (setIdMatch && setIdMatch[1]) {
+          const setId = setIdMatch[1];
+          console.log(`Found setId from web search: ${setId}`);
+
+          // Fetch details for this setId
+          const detailsUrl = `${this.baseUrl}/spls.json?setid=${setId}`;
+          const detailsResponse = await axios.get(detailsUrl, { timeout: 10000 });
+
+          if (detailsResponse.data?.data && detailsResponse.data.data.length > 0) {
+            const item = detailsResponse.data.data[0];
+            const titleMatch = item.title.match(/\[([^\]]+)\]$/);
+            const labeler = titleMatch ? titleMatch[1] : 'Unknown';
+
+            let image: string | undefined;
+            try {
+              const mediaUrl = `${this.baseUrl}/spls/${item.setid}/media.json`;
+              const mediaResponse = await axios.get(mediaUrl, { timeout: 5000 });
+              if (mediaResponse.data?.data?.media && Array.isArray(mediaResponse.data.data.media) && mediaResponse.data.data.media.length > 0) {
+                image = mediaResponse.data.data.media[0].url || undefined;
+              }
+            } catch (mediaError) {
+              console.log(`Failed to fetch images for medication ${item.setid}`);
+            }
+
+            return {
+              success: true,
+              data: [{
+                setId: item.setid,
+                title: item.title,
+                ndc: [],
+                image: image,
+                labeler: labeler,
+                published: item.published_date || '',
+                updated: item.published_date || ''
+              }],
+              total: 1
+            };
+          }
+        }
+      } catch (webError) {
+        console.error('Web scraping fallback failed:', webError instanceof Error ? webError.message : 'Unknown error');
+      }
+
+      // No results found
+      console.log(`No results found for NDC: ${ndc}`);
       return {
         success: true,
-        data: medications,
-        total: response.data.metadata?.total || medications.length
+        data: [],
+        total: 0
       };
     } catch (error) {
       console.error('DailyMed NDC search error:', error);
