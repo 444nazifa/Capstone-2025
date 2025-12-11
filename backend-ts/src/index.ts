@@ -15,7 +15,7 @@ import reminderScheduler from './services/reminder-scheduler.service';
 dotenv.config();
 
 const app = express();
-const PORT = 3015;
+const PORT = process.env.PORT || 3015;
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -32,13 +32,6 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize Firebase for push notifications
-firebaseService.initializeFirebase();
-
-// Only start scheduler if not on Vercel (for local development)
-if (!process.env.VERCEL) {
-  reminderScheduler.startScheduler();
-}
 
 app.get('/health', (req, res) => {
   res.json({
@@ -77,6 +70,14 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// Initialize Firebase for push notifications
+firebaseService.initializeFirebase();
+
+// Only start scheduler if not on Vercel (for local development)
+if (!process.env.VERCEL) {
+  reminderScheduler.startScheduler();
+}
 
 // Cleanup on shutdown
 process.on('SIGTERM', () => {
