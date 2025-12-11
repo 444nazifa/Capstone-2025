@@ -15,7 +15,8 @@ import io.ktor.client.request.setBody
 @Serializable
 data class ChatRequest(
     val message: String,
-    val reminders: List<ReminderPayload>? = null
+    val reminders: List<ReminderPayload>? = null,
+    val medications: List<MedicationPayload>? = null
 )
 
 @Serializable
@@ -23,6 +24,14 @@ data class ReminderPayload(
     val name: String? = null,
     val time: String? = null,
     val notes: String? = null
+)
+
+@Serializable
+data class MedicationPayload(
+    val name: String,
+    val dosage: String,
+    val frequency: String,
+    val instructions: String? = null
 )
 
 @Serializable
@@ -48,12 +57,13 @@ object ChatApi {
 
     suspend fun sendMessage(
         message: String,
-        reminders: List<ReminderPayload>? = null
+        reminders: List<ReminderPayload>? = null,
+        medications: List<MedicationPayload>? = null
     ): ChatResponse {
-        val url = backendBaseUrl() //
+        val url = backendBaseUrl()
         val response = client.post(url) {
             contentType(ContentType.Application.Json)
-            setBody(ChatRequest(message, reminders))
+            setBody(ChatRequest(message, reminders, medications))
         }
         return response.body()
     }

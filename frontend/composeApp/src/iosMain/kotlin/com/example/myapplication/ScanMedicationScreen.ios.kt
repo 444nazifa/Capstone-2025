@@ -136,6 +136,14 @@ actual fun CameraView(modifier: Modifier) {
     )
 }
 
+@Composable
+actual fun RequestCameraPermissionHandler(onPermissionResult: (Boolean) -> Unit) {
+    LaunchedEffect(Unit) {
+        val granted = requestCameraPermission()
+        onPermissionResult(granted)
+    }
+}
+
 @OptIn(ExperimentalForeignApi::class)
 actual suspend fun requestCameraPermission(): Boolean {
     return withContext(Dispatchers.Main) {

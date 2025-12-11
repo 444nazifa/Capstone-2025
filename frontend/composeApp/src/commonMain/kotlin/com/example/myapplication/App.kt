@@ -127,6 +127,7 @@ fun MainApp(
 ) {
     var selectedTab by remember { mutableStateOf("home") }
     val medications by homeViewModel.medications.collectAsState()
+    val allMedications by medicationViewModel.medications.collectAsState()
 
 
     Scaffold(
@@ -192,7 +193,8 @@ fun MainApp(
             )
             "chat" -> ChatbotScreen(
                 modifier = Modifier.padding(innerPadding),
-                reminders = medications
+                reminders = medications,
+                medications = allMedications
             )
 
 

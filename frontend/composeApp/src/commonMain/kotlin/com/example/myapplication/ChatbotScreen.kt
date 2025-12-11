@@ -24,14 +24,14 @@ data class ChatMessageUi(
 @Composable
 fun ChatbotScreen(
     modifier: Modifier = Modifier,
-    reminders: List<MedicationReminder> = emptyList()
-
+    reminders: List<MedicationReminder> = emptyList(),
+    medications: List<com.example.myapplication.data.UserMedication> = emptyList()
 ) {
     var input by remember { mutableStateOf(TextFieldValue("")) }
     val messages = remember {
         mutableStateListOf(
             ChatMessageUi(
-                text = "Hi! I’m your CareCapsule assistant. How can I help you today?",
+                text = "Hi! I'm your CareCapsule assistant. I can help you with reminders, medication information, and drug interactions. How can I help you today?",
                 isUser = false
             )
         )
@@ -111,7 +111,7 @@ fun ChatbotScreen(
                 value = input,
                 onValueChange = { input = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Ask about reminders or how to use the app") },
+                placeholder = { Text("Ask about medications, interactions, or reminders") },
                 maxLines = 3
             )
 
@@ -134,9 +134,19 @@ fun ChatbotScreen(
                                     )
                                 }
 
+                                val medicationPayloads = medications.map {
+                                    MedicationPayload(
+                                        name = it.medicationName,
+                                        dosage = it.dosage,
+                                        frequency = it.frequency,
+                                        instructions = it.instructions
+                                    )
+                                }
+
                                 val response = ChatApi.sendMessage(
                                     message = text,
-                                    reminders = reminderPayloads
+                                    reminders = reminderPayloads,
+                                    medications = medicationPayloads
                                 )
                                 messages.add(
                                     ChatMessageUi(

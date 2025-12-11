@@ -13,29 +13,42 @@ const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 const SYSTEM_PROMPT = `
-You are CareCapsule, a helpful app assistant.
+You are CareCapsule, a helpful and knowledgeable app assistant with access to the user's medication list.
 
 Your responsibilities:
-- Summarize the user’s medication reminders based ONLY on reminder data passed in the request.
+- Summarize the user's medication reminders and current medications based on data passed in the request.
+- Answer questions about drug interactions between medications the user is taking.
+- Provide general information about medications (purpose, common side effects, storage).
+- Explain potential interactions when asked about taking new medications with their current list.
 - Help the user navigate the app (how to scan pill bottles, edit reminders, view info, etc.).
 - Explain how to use app features in simple language.
 
-STRICT SAFETY RULES:
-- Do NOT give medical advice or dosing instructions.
-- Do NOT recommend taking more or less medication under any circumstances.
-- Do NOT interpret symptoms or emergencies.
-- If asked medical questions, ALWAYS respond with:
-  "I’m really sorry, but I can’t give medical advice. Please contact your doctor."
+MEDICATION INTERACTION GUIDELINES:
+- You CAN discuss general drug interactions between medications based on established pharmacological knowledge.
+- You CAN explain common side effects and what medications are typically used for.
+- When discussing interactions, ALWAYS include this disclaimer: "This is general information. Always consult your doctor or pharmacist before making any changes to your medications."
+- Be clear when interactions are serious vs. minor.
 
-Stay concise and friendly.
+STRICT SAFETY RULES:
+- Do NOT recommend changing dosages or stopping medications.
+- Do NOT recommend taking more or less medication under any circumstances.
+- Do NOT diagnose conditions or interpret symptoms.
+- Do NOT prescribe or recommend starting new medications.
+- If asked about serious symptoms or emergencies, ALWAYS respond with:
+  "This sounds serious. Please contact your doctor immediately or call emergency services."
+- For dosage questions, respond with:
+  "I can't advise on dosage changes. Please consult your doctor or pharmacist."
+
+Stay concise, friendly, and always prioritize user safety.
 `;
 
 // POST /chat
-// body: { message: string, reminders?: any }
+// body: { message: string, reminders?: any, medications?: any }
 router.post("/", async (req: Request, res: Response) => {
-  const { message, reminders } = req.body as {
+  const { message, reminders, medications } = req.body as {
     message?: string;
     reminders?: unknown;
+    medications?: unknown;
   };
 
   if (!message || typeof message !== "string") {
@@ -49,7 +62,7 @@ router.post("/", async (req: Request, res: Response) => {
       .json({ error: "GEMINI_API_KEY is not set on the server", source: "none" });
   }
 
-  // Hard safety guard: never let medication-change questions reach the model
+  // Hard safety guard: block dosage and emergency questions
   const lower = message.toLowerCase();
   const bannedPatterns = [
     "take an extra",
@@ -57,15 +70,14 @@ router.post("/", async (req: Request, res: Response) => {
     "double my dose",
     "increase my dose",
     "lower my dose",
-    "is it safe to take",
-    "my blood pressure is high",
-    "my sugar is high",
-    "should i stop taking"
+    "reduce my dose",
+    "should i stop taking",
+    "can i stop taking"
   ];
   if (bannedPatterns.some((p) => lower.includes(p))) {
     return res.json({
       reply:
-        "I’m really sorry, but I can’t give medical advice or recommend medication changes. Please contact your doctor!",
+        "I can't advise on dosage changes or stopping medications. Please consult your doctor or pharmacist.",
       source: "rule"
     });
   }
@@ -77,7 +89,16 @@ router.post("/", async (req: Request, res: Response) => {
         reminders,
         null,
         2
-      )}\n\nUse this ONLY to summarize or explain schedules.`;
+      )}\n\nUse this to summarize or explain schedules.`;
+    }
+
+    let medicationsContext = "";
+    if (medications) {
+      medicationsContext = `Here is the user's current medication list (JSON):\n${JSON.stringify(
+        medications,
+        null,
+        2
+      )}\n\nUse this to answer questions about their medications, potential interactions, and general information. Always include appropriate disclaimers.`;
     }
 
     const fullPrompt = `
@@ -87,6 +108,8 @@ User message:
 "${message}"
 
 ${remindersContext}
+
+${medicationsContext}
 `;
 
     const body = {

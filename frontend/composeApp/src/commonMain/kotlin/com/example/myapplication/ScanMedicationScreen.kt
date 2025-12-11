@@ -56,12 +56,14 @@ fun ScanMedicationScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Request permission on mount
-    LaunchedEffect(previewMode) {
-        cameraPermissionGranted = if (previewMode) {
-            true       // pretend permission is granted in preview
-        } else {
-            requestCameraPermission()
+    // Request permission on mount - handled platform-specifically
+    if (!previewMode && cameraPermissionGranted == null) {
+        RequestCameraPermissionHandler { granted ->
+            cameraPermissionGranted = granted
+        }
+    } else if (previewMode && cameraPermissionGranted == null) {
+        LaunchedEffect(Unit) {
+            cameraPermissionGranted = true
         }
     }
 
@@ -706,6 +708,9 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
 // Platform-specific expect declarations
 @Composable
 expect fun CameraView(modifier: Modifier)
+
+@Composable
+expect fun RequestCameraPermissionHandler(onPermissionResult: (Boolean) -> Unit)
 
 expect suspend fun requestCameraPermission(): Boolean
 

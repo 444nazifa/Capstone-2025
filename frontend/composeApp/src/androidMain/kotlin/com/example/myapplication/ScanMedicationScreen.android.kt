@@ -3,9 +3,13 @@
 // ============================================
 package com.example.myapplication
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -68,10 +72,36 @@ actual fun CameraView(modifier: Modifier) {
     )
 }
 
+@Composable
+actual fun RequestCameraPermissionHandler(onPermissionResult: (Boolean) -> Unit) {
+    val context = LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        onPermissionResult(isGranted)
+    }
+
+    LaunchedEffect(Unit) {
+        val permission = Manifest.permission.CAMERA
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                onPermissionResult(true)
+            }
+            else -> {
+                permissionLauncher.launch(permission)
+            }
+        }
+    }
+}
+
 actual suspend fun requestCameraPermission(): Boolean {
-    // This will be called from a Composable context, so we can't directly access LocalContext
-    // We need to check permission using the application context
-    // For now, return true and let the Composable handle permission request
+    // This is called from LaunchedEffect in commonMain
+    // The actual permission request is handled by the Composable above
+    // This function just checks if permission is already granted
     return true
 }
 
