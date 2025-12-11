@@ -199,6 +199,23 @@ private enum class EditMedicationTab(val label: String) {
     Notes("Notes")
 }
 
+// Helper function to format time
+private fun formatTime(time: String): String {
+    val parts = time.split(":")
+    if (parts.size >= 2) {
+        val hour = parts[0].toIntOrNull() ?: 0
+        val minute = parts[1]
+        val period = if (hour < 12) "AM" else "PM"
+        val hour12 = when {
+            hour == 0 -> 12
+            hour > 12 -> hour - 12
+            else -> hour
+        }
+        return "$hour12:$minute $period"
+    }
+    return time
+}
+
 // ---------- BASIC TAB ----------
 
 @Composable
@@ -303,16 +320,18 @@ private fun ScheduleCard(
                 "Every day",
                 "Every other day",
                 "As needed",
-                "Weekly",
-                "Twice daily"
+                "Weekly"
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 options.forEach { option ->
                     FilterChip(
                         selected = frequency == option,
                         onClick = { onFrequencyChange(option) },
-                        label = { Text(option) },
+                        label = { Text(option, fontSize = 13.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFF2E7D32),
                             selectedLabelColor = Color.White
@@ -330,87 +349,69 @@ private fun ScheduleCard(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    containerColor = Color(0xFFFFF9E6)
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        tint = Color(0xFFE65100)
                     )
-                    Text(
-                        "Schedule times are shown for reference. To modify schedules, please create a new medication or contact support.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    Column {
+                        Text(
+                            "Current dosing times:",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF6D4C41)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "You can update the frequency above. Schedule times are shown for reference only.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6D4C41),
+                            lineHeight = 16.sp
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             scheduleTimes.forEachIndexed { index, time ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFF5F5F5)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = Color(0xFF616161),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    OutlinedTextField(
-                        value = time,
-                        onValueChange = { new ->
-                            val updated = scheduleTimes.toMutableList()
-                            updated[index] = new
-                            onScheduleTimesChange(updated)
-                        },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Time (HH:MM)") },
-                        enabled = readOnly.not(), // Disable if read-only
-                        readOnly = true // Make read-only for now
-                    )
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    if (scheduleTimes.size > 1 && !readOnly) {
-                        TextButton(
-                            onClick = {
-                                val updated = scheduleTimes.toMutableList()
-                                updated.removeAt(index)
-                                onScheduleTimesChange(updated)
-                            },
-                            enabled = false // Disabled for now
-                        ) {
-                            Text("Remove")
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = formatTime(time),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF424242)
+                        )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            if (!readOnly) {
-                OutlinedButton(
-                    onClick = {
-                        val updated = scheduleTimes.toMutableList()
-                        updated.add("08:00")
-                        onScheduleTimesChange(updated)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = false // Disabled for now
-                ) {
-                    Text("Add Time")
                 }
             }
         }

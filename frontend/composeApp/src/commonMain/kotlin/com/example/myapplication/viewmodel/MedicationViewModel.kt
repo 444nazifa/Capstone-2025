@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.api.MedicationApiService
 import com.example.myapplication.data.MedicationSummary
+import com.example.myapplication.data.UpdateMedicationRequest
 import com.example.myapplication.data.UserMedication
 import com.example.myapplication.storage.SecureStorage
 import com.example.myapplication.storage.getToken
@@ -14,7 +15,8 @@ import kotlinx.coroutines.launch
 class MedicationViewModel(
     private val medicationApi: MedicationApiService = MedicationApiService.getInstance(),
     private val secureStorage: SecureStorage,
-    private val onMedicationDeleted: (() -> Unit)? = null
+    private val onMedicationDeleted: (() -> Unit)? = null,
+    private val onMedicationUpdated: (() -> Unit)? = null
 ) : ViewModel() {
 
     // Medication summary
@@ -107,21 +109,19 @@ class MedicationViewModel(
                 return@launch
             }
 
-            // Build the update map with all fields that can be updated
-            val updates = mutableMapOf<String, Any>()
-
-            updates["medication_name"] = updatedMedication.medicationName
-            updates["dosage"] = updatedMedication.dosage
-            updates["frequency"] = updatedMedication.frequency
-            updates["start_date"] = updatedMedication.startDate
-
-            // Optional fields - only include if not null
-            updatedMedication.doctorName?.let { updates["doctor_name"] = it }
-            updatedMedication.pharmacyName?.let { updates["pharmacy_name"] = it }
-            updatedMedication.instructions?.let { updates["instructions"] = it }
-            updatedMedication.quantityTotal?.let { updates["quantity_total"] = it }
-            updatedMedication.quantityRemaining?.let { updates["quantity_remaining"] = it }
-            updatedMedication.refillReminderDays?.let { updates["refill_reminder_days"] = it }
+            // Build the update request with all fields that can be updated
+            val updates = UpdateMedicationRequest(
+                medicationName = updatedMedication.medicationName,
+                dosage = updatedMedication.dosage,
+                frequency = updatedMedication.frequency,
+                startDate = updatedMedication.startDate,
+                doctorName = updatedMedication.doctorName,
+                pharmacyName = updatedMedication.pharmacyName,
+                instructions = updatedMedication.instructions,
+                quantityTotal = updatedMedication.quantityTotal,
+                quantityRemaining = updatedMedication.quantityRemaining,
+                refillReminderDays = updatedMedication.refillReminderDays
+            )
 
             medicationApi.updateMedication(token, updatedMedication.id, updates)
                 .onSuccess { updated ->
@@ -136,6 +136,9 @@ class MedicationViewModel(
                         .onSuccess { summary ->
                             _summary.value = summary
                         }
+
+                    // Notify home screen to refresh
+                    onMedicationUpdated?.invoke()
 
                     onComplete(true)
                 }

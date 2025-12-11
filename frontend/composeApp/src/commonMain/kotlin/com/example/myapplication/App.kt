@@ -45,6 +45,9 @@ fun App(
                 secureStorage = secureStorage,
                 onMedicationDeleted = {
                     homeViewModel.loadMedications()
+                },
+                onMedicationUpdated = {
+                    homeViewModel.loadMedications()
                 }
             )
         }

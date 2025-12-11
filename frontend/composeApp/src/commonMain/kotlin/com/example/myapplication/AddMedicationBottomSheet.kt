@@ -51,7 +51,6 @@ fun AddMedicationBottomSheet(
     var showTimePickerDialog by remember { mutableStateOf(false) }
     var selectedColor by remember { mutableStateOf("#4CAF50") }
     var expandedScheduleIndex by remember { mutableStateOf<Int?>(null) }
-    var isSaving by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
@@ -322,8 +321,7 @@ fun AddMedicationBottomSheet(
             // Save button
             Button(
                 onClick = {
-                    if (dosage.isNotBlank() && !isSaving && !isLoading) {
-                        isSaving = true
+                    if (dosage.isNotBlank() && !isLoading) {
                         val request = CreateMedicationRequest(
                             medicationName = medication.title,
                             dosage = dosage,
@@ -355,9 +353,9 @@ fun AddMedicationBottomSheet(
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                 shape = RoundedCornerShape(12.dp),
-                enabled = dosage.isNotBlank() && !isSaving && !isLoading
+                enabled = dosage.isNotBlank() && !isLoading
             ) {
-                if (isSaving || isLoading) {
+                if (isLoading) {
                     CircularProgressIndicator(
                         color = Color.White,
                         modifier = Modifier.size(24.dp),

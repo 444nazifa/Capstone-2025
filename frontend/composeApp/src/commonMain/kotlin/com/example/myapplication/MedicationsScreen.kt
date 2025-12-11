@@ -71,6 +71,7 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
     }
 
     Scaffold(
+        modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Surface(
@@ -80,7 +81,6 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(modifier)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp, vertical = 40.dp)
                     .padding(top = 10.dp)
@@ -257,15 +257,16 @@ fun MedicationScreen(viewModel: MedicationViewModel, modifier: Modifier = Modifi
                 medication = med,
                 onBack = { editingMedication = null },
                 onSave = { updated ->
+                    // Don't close immediately - wait for result
                     viewModel.updateMedication(updated) { success ->
                         if (success) {
+                            editingMedication = null
                             scope.launch {
                                 snackbarHostState.showSnackbar(
-                                    message = "Medication updated successfully",
+                                    message = "✓ Medication updated successfully",
                                     duration = SnackbarDuration.Short
                                 )
                             }
-                            editingMedication = null
                         } else {
                             scope.launch {
                                 snackbarHostState.showSnackbar(

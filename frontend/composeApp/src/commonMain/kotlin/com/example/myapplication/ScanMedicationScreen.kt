@@ -73,12 +73,11 @@ fun ScanMedicationScreen(
         }
     }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-
+    Box(modifier = modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -177,14 +176,14 @@ fun ScanMedicationScreen(
                     }
                 }
             }
-
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp)
-            )
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp, start = 16.dp, end = 16.dp, top = 16.dp)
+        )
     }
 
     if (showErrorDialog) {
