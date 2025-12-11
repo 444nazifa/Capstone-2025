@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Person
@@ -125,6 +126,8 @@ fun MainApp(
     isNotificationsEnabled: () -> Boolean = { false }
 ) {
     var selectedTab by remember { mutableStateOf("home") }
+    val medications by homeViewModel.medications.collectAsState()
+
 
     Scaffold(
         bottomBar = {
@@ -149,6 +152,12 @@ fun MainApp(
                     onClick = { selectedTab = "scan" },
                     icon = { Icon(Icons.Default.CameraAlt, contentDescription = "Scan") },
                     label = { Text("Scan") }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == "chat",
+                    onClick = { selectedTab = "chat" },
+                    icon = { Icon(Icons.Default.Chat, contentDescription = "Chat") },
+                    label = { Text("Chat") }
                 )
                 NavigationBarItem(
                     selected = selectedTab == "profile",
@@ -181,6 +190,12 @@ fun MainApp(
                 },
                 modifier = Modifier.padding(innerPadding)   // ← important
             )
+            "chat" -> ChatbotScreen(
+                modifier = Modifier.padding(innerPadding),
+                reminders = medications
+            )
+
+
 
             "profile" -> ProfileScreen(
                 modifier = Modifier.padding(innerPadding),
