@@ -28,6 +28,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.data.UserSession
 import com.example.myapplication.viewmodel.ProfileViewModel
 import com.example.myapplication.viewmodel.ProfileUpdateState
+import com.example.myapplication.theme.ScreenContainer
+import com.example.myapplication.theme.CareCapsuleTheme
 
 // Simple profile model for this screen
 data class UserProfile(
@@ -77,7 +79,7 @@ fun ProfileScreen(
     var isEditing by remember { mutableStateOf(false) }
     var edit by remember { mutableStateOf(user) }
 
-    val brandGreen = Color(0xFF2E7D32)
+    val brandGreen = MaterialTheme.colorScheme.primary
     val cardShape = RoundedCornerShape(12.dp)
 
     // Handle update state
@@ -104,14 +106,7 @@ fun ProfileScreen(
         }
     }
 
-    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp)
-                .padding(top = 28.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    ScreenContainer(modifier = modifier) {
 
             // ───────── Title ─────────
             Text(
@@ -120,6 +115,7 @@ fun ProfileScreen(
                 color = brandGreen,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
+            Spacer(Modifier.height(10.dp))
 
             // ───────── Header Card (Avatar + Email + Edit) ─────────
             OutlinedCard(
@@ -186,6 +182,7 @@ fun ProfileScreen(
 
             // ───────── Account Information (Email + Phone Number + DOB) ─────────
             if (!isEditing) {
+                Spacer(Modifier.height(16.dp))
                 OutlinedCard(
                     shape = cardShape,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .6f)),
@@ -209,6 +206,7 @@ fun ProfileScreen(
 
             // ───────── Notification Settings ─────────
             if (!isEditing) {
+                Spacer(Modifier.height(16.dp))
                 OutlinedCard(
                     shape = cardShape,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .6f)),
@@ -283,6 +281,7 @@ fun ProfileScreen(
 
             // ───────── Sign Out Button ─────────
             if (sessionUser != null && !isEditing) {
+                Spacer(Modifier.height(16.dp))
                 OutlinedCard(
                     shape = cardShape,
                     border = BorderStroke(1.dp, Color(0xFFD32F2F).copy(alpha = 0.5f)),
@@ -311,6 +310,7 @@ fun ProfileScreen(
 
             // ───────── Edit Profile (shown when editing) ─────────
             if (isEditing) {
+                Spacer(Modifier.height(16.dp))
                 EditProfileCard(
                     value = edit,
                     onChange = { edit = it },
@@ -339,7 +339,6 @@ fun ProfileScreen(
             }
         }
     }
-}
 
 // Small info row (icon + text)
 @Composable
@@ -592,5 +591,7 @@ private fun formatDateForBackend(displayDate: String): String {
 @Preview
 @Composable
 fun ProfileScreenPreview() {
-    ProfileScreen()
+    CareCapsuleTheme {
+        ProfileScreen()
+    }
 }

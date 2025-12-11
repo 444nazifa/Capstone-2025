@@ -106,7 +106,7 @@ class PushNotificationManager private constructor(
                 throw Exception("Not authenticated - no auth token found")
             }
 
-            val apiService = MedicationApiService.getInstance(context)
+            val apiService = MedicationApiService.getInstance()
             apiService.registerDeviceToken(authToken, token, "android")
 
             prefs.edit().apply {
@@ -131,7 +131,7 @@ class PushNotificationManager private constructor(
 
             val token = getToken() ?: return
 
-            val apiService = MedicationApiService.getInstance(context)
+            val apiService = MedicationApiService.getInstance()
             apiService.unregisterDeviceToken(authToken, token)
 
             prefs.edit().apply {

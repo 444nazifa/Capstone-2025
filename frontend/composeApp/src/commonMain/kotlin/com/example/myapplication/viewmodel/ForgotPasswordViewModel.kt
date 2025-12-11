@@ -12,32 +12,40 @@ class ForgotPasswordViewModel(
     private val authApiService: AuthApiService = AuthApiService()
 ) : ViewModel() {
 
+    private val _email = MutableStateFlow("")
+    val email: StateFlow<String> = _email.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _successMessage = MutableStateFlow<String?>(null)
-    val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
+    private val _isSent = MutableStateFlow(false)
+    val isSent: StateFlow<Boolean> = _isSent.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    fun sendResetEmail(email: String) {
-        if (email.isBlank()) {
+    fun setEmail(value: String) {
+        _email.value = value
+    }
+
+    fun requestReset() {
+        val emailValue = _email.value
+        if (emailValue.isBlank()) {
             _errorMessage.value = "Email is required"
             return
         }
 
         _isLoading.value = true
-        _successMessage.value = null
+        _isSent.value = false
         _errorMessage.value = null
 
         viewModelScope.launch {
-            val result = authApiService.forgotPassword(email)
+            val result = authApiService.forgotPassword(emailValue)
             _isLoading.value = false
 
             result.fold(
                 onSuccess = { message ->
-                    _successMessage.value = message
+                    _isSent.value = true
                 },
                 onFailure = { error ->
                     _errorMessage.value = error.message ?: "Failed to send reset email"
@@ -46,9 +54,9 @@ class ForgotPasswordViewModel(
         }
     }
 
-    fun clearMessages() {
+    fun clearBanners() {
         _errorMessage.value = null
-        // Don't clear success message when user types
+        _isSent.value = false
     }
 
     override fun onCleared() {

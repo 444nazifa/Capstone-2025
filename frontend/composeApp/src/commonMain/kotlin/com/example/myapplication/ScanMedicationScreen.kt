@@ -29,14 +29,19 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.myapplication.theme.CareCapsuleTheme
+import com.example.myapplication.theme.ScreenContainer
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ScanMedicationScreen(
-    viewModel: ScanMedicationViewModel = viewModel(),
+    viewModel: ScanMedicationViewModel,
     showBackButton: Boolean = false,
     onNavigateBack: () -> Unit = {},
     onBarcodeScanned: (String) -> Unit = {},
-    onMedicationAdded: () -> Unit = {}
+    onMedicationAdded: () -> Unit = {},
+    previewMode: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
     val barcode by viewModel.barcode.collectAsState()
     var cameraPermissionGranted by remember { mutableStateOf<Boolean?>(null) } // null = checking
@@ -52,8 +57,12 @@ fun ScanMedicationScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Request permission on mount
-    LaunchedEffect(Unit) {
-        cameraPermissionGranted = requestCameraPermission()
+    LaunchedEffect(previewMode) {
+        cameraPermissionGranted = if (previewMode) {
+            true       // pretend permission is granted in preview
+        } else {
+            requestCameraPermission()
+        }
     }
 
     // If barcode is scanned, call the callback and reset
@@ -65,97 +74,110 @@ fun ScanMedicationScreen(
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Header
-                ScanHeader(
-                    showBackButton = showBackButton,
-                    onNavigateBack = onNavigateBack
-                )
 
-                when {
-                cameraPermissionGranted == null -> {
-                    // Still checking permission, show loading
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF2E7D32))
-                    }
-                }
-                cameraPermissionGranted == false -> {
-                    PermissionDeniedContent(
-                        onRequestPermission = {
-                            scope.launch {
-                                cameraPermissionGranted = requestCameraPermission()
-                            }
-                        }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 20.dp)
+            ) {
+                if (!showManualEntry && cameraPermissionGranted != false) {
+                    ScanHeader(
+                        showBackButton = showBackButton,
+                        onNavigateBack = onNavigateBack
                     )
                 }
-                showManualEntry -> {
-                    ManualEntryWithResultsContent(
-                        onBack = {
-                            showManualEntry = false
-                            searchResults = null
-                            searchQuery = ""
-                        },
-                        onSearch = { query ->
-                            isProcessing = true
-                            searchQuery = query
-                            scope.launch {
-                                val response = searchMedicationsByNDC(query)
-                                isProcessing = false
-                                if (response != null && response.success && !response.data.isNullOrEmpty()) {
-                                    searchResults = response.data
-                                } else {
-                                    searchResults = emptyList()
-                                    errorMessage = response?.error ?: "No medications found"
-                                    showErrorDialog = true
-                                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                ) {
+                    when {
+                        cameraPermissionGranted == null -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                             }
-                        },
-                        searchResults = searchResults,
-                        isProcessing = isProcessing,
-                        onMedicationSelected = { medication ->
-                            selectedMedication = medication
-                            showAddBottomSheet = true
                         }
-                    )
-                }
-                else -> {
-                    CameraContent(
-                        onManualEntry = { showManualEntry = true },
-                        onImageCaptured = { imageData ->
-                            isProcessing = true
-                            scope.launch {
-                                val ndc = sendImageToBackend(imageData)
-                                if (ndc != null) {
-                                    searchQuery = ndc
-                                    val response = searchMedicationsByNDC(ndc)
-                                    isProcessing = false
-                                    if (response != null && response.success && !response.data.isNullOrEmpty()) {
-                                        searchResults = response.data
-                                    } else {
-                                        errorMessage = response?.error ?: "No medications found for NDC: $ndc"
-                                        showErrorDialog = true
+                        cameraPermissionGranted == false -> {
+                            PermissionDeniedContent(
+                                onRequestPermission = {
+                                    scope.launch {
+                                        cameraPermissionGranted = requestCameraPermission()
                                     }
-                                } else {
-                                    isProcessing = false
-                                    errorMessage = "Could not read barcode from image"
-                                    showErrorDialog = true
                                 }
-                            }
-                        },
-                        isProcessing = isProcessing
-                    )
-                }
+                            )
+                        }
+                        showManualEntry -> {
+                            ManualEntryWithResultsContent(
+                                onBack = {
+                                    showManualEntry = false
+                                    searchResults = null
+                                    searchQuery = ""
+                                },
+                                onSearch = { query ->
+                                    isProcessing = true
+                                    searchQuery = query
+                                    scope.launch {
+                                        val response = searchMedicationsByNDC(query)
+                                        isProcessing = false
+                                        if (response != null && response.success && !response.data.isNullOrEmpty()) {
+                                            searchResults = response.data
+                                        } else {
+                                            searchResults = emptyList()
+                                            errorMessage = response?.error ?: "No medications found"
+                                            showErrorDialog = true
+                                        }
+                                    }
+                                },
+                                searchResults = searchResults,
+                                isProcessing = isProcessing,
+                                onMedicationSelected = { medication ->
+                                    selectedMedication = medication
+                                    showAddBottomSheet = true
+                                }
+                            )
+                        }
+                        else -> {
+                            CameraContent(
+                                onManualEntry = { showManualEntry = true },
+                                onImageCaptured = { imageData ->
+                                    isProcessing = true
+                                    scope.launch {
+                                        val ndc = sendImageToBackend(imageData)
+                                        if (ndc != null) {
+                                            searchQuery = ndc
+                                            val response = searchMedicationsByNDC(ndc)
+                                            isProcessing = false
+                                            if (response != null && response.success && !response.data.isNullOrEmpty()) {
+                                                searchResults = response.data
+                                            } else {
+                                                errorMessage = response?.error
+                                                    ?: "No medications found for NDC: $ndc"
+                                                showErrorDialog = true
+                                            }
+                                        } else {
+                                            isProcessing = false
+                                            errorMessage = "Could not read barcode from image"
+                                            showErrorDialog = true
+                                        }
+                                    }
+                                },
+                                isProcessing = isProcessing,
+                                previewMode = previewMode
+                            )
+                        }
+                    }
                 }
             }
 
-            // Snackbar Host
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier
@@ -188,7 +210,7 @@ fun ScanMedicationScreen(
             confirmButton = {
                 Button(
                     onClick = { showErrorDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("OK")
                 }
@@ -238,8 +260,8 @@ fun ScanHeader(showBackButton: Boolean, onNavigateBack: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF2E7D32))
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .background(MaterialTheme.colorScheme.primary)
+            .padding(top = 12.dp, bottom = 16.dp, start = 20.dp, end = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (showBackButton) {
@@ -250,8 +272,7 @@ fun ScanHeader(showBackButton: Boolean, onNavigateBack: () -> Unit) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.White
-                )
+                    tint = MaterialTheme.colorScheme.onPrimary                )
             }
             Spacer(modifier = Modifier.width(12.dp))
         }
@@ -261,7 +282,7 @@ fun ScanHeader(showBackButton: Boolean, onNavigateBack: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp
             ),
-            color = Color.White
+            color = MaterialTheme.colorScheme.onPrimary
         )
     }
 }
@@ -270,9 +291,12 @@ fun ScanHeader(showBackButton: Boolean, onNavigateBack: () -> Unit) {
 fun CameraContent(
     onManualEntry: () -> Unit,
     onImageCaptured: (ByteArray) -> Unit,
-    isProcessing: Boolean
+    isProcessing: Boolean,
+    previewMode: Boolean = false
 ) {
     var isScanningAnimation by remember { mutableStateOf(false) }
+
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -286,14 +310,16 @@ fun CameraContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Instructions
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+            ),
             elevation = CardDefaults.cardElevation(0.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
@@ -304,14 +330,14 @@ fun CameraContent(
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
-                    tint = Color(0xFF2E7D32),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Position the barcode or QR code inside the frame to scan",
                     fontSize = 14.sp,
-                    color = Color(0xFF1B5E20),
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 20.sp
                 )
             }
@@ -326,11 +352,20 @@ fun CameraContent(
             contentAlignment = Alignment.Center
         ) {
             // Platform-specific camera view
-            CameraView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-            )
+            if (previewMode) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.LightGray.copy(alpha = 0.4f))
+                )
+            } else {
+                CameraView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(16.dp))
+                )
+            }
 
             // Scanning Frame Overlay
             Canvas(
@@ -339,8 +374,7 @@ fun CameraContent(
             ) {
                 val cornerLength = 40.dp.toPx()
                 val strokeWidth = 8.dp.toPx()
-                val color = androidx.compose.ui.graphics.Color(0xFF2E7D32)
-
+                val color = primaryColor
                 // Top-left
                 drawLine(color, androidx.compose.ui.geometry.Offset(0f, 0f),
                     androidx.compose.ui.geometry.Offset(cornerLength, 0f), strokeWidth)
@@ -387,7 +421,7 @@ fun CameraContent(
                     modifier = Modifier
                         .size(280.dp, 2.dp)
                         .offset(y = animatedOffset.dp)
-                        .background(Color(0xFF4CAF50))
+                        .background(MaterialTheme.colorScheme.primary)
                 )
             }
         }
@@ -401,7 +435,7 @@ fun CameraContent(
         ) {
             Button(
                 onClick = {
-                    if (!isProcessing) {
+                    if (!isProcessing && !previewMode) {
                         captureImage { imageData ->
                             onImageCaptured(imageData)
                         }
@@ -410,8 +444,7 @@ fun CameraContent(
                 modifier = Modifier
                     .size(70.dp)
                     .clip(CircleShape),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                enabled = !isProcessing,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),                enabled = !isProcessing,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 if (isProcessing) {
@@ -435,8 +468,8 @@ fun CameraContent(
             OutlinedButton(
                 onClick = onManualEntry,
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF2E7D32)),
-                border = BorderStroke(2.dp, Color(0xFF2E7D32)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp),
                 enabled = !isProcessing
             ) {
@@ -494,7 +527,7 @@ fun ManualEntryWithResultsContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(20.dp)
         ) {
             Row(
@@ -502,15 +535,14 @@ fun ManualEntryWithResultsContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, "Back", tint = Color(0xFF2E7D32))
+                    Icon(Icons.Default.ArrowBack, "Back", tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "Search Medications",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2E7D32)
-                )
+                    color = MaterialTheme.colorScheme.primary                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -548,8 +580,8 @@ fun ManualEntryWithResultsContent(
                     }
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2E7D32),
-                    focusedLabelColor = Color(0xFF2E7D32),
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White
                 ),
@@ -568,8 +600,7 @@ fun ManualEntryWithResultsContent(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),                shape = RoundedCornerShape(12.dp),
                 enabled = !isProcessing
             ) {
                 if (isProcessing) {
@@ -619,7 +650,7 @@ fun ManualEntryWithResultsContent(
                             "${searchResults.size} Result${if (searchResults.size != 1) "s" else ""} Found",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2E7D32),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
@@ -652,7 +683,7 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text("Camera Permission Required", style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+            fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -664,7 +695,7 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
         Button(
             onClick = onRequestPermission,
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text("GRANT PERMISSION", fontWeight = FontWeight.Bold)
@@ -687,4 +718,16 @@ expect suspend fun searchMedicationsByNDC(ndc: String): com.example.myapplicatio
 
 expect suspend fun addMedicationToUserList(request: com.example.myapplication.data.CreateMedicationRequest): Boolean
 
+@Preview
+@Composable
+fun ScanMedicationScreenPreview() {
+    CareCapsuleTheme {
+        val previewViewModel = remember { ScanMedicationViewModel() }
+        ScanMedicationScreen(
+            viewModel = previewViewModel,
+            showBackButton = true,
+            previewMode = true
+        )
+    }
+}
 
