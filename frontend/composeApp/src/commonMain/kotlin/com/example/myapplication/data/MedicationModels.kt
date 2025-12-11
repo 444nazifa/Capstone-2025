@@ -92,6 +92,25 @@ data class CreateScheduleRequest(
 )
 
 @Serializable
+data class UpdateMedicationRequest(
+    @SerialName("medication_name") val medicationName: String? = null,
+    val dosage: String? = null,
+    val instructions: String? = null,
+    val frequency: String? = null,
+    @SerialName("doctor_name") val doctorName: String? = null,
+    @SerialName("pharmacy_name") val pharmacyName: String? = null,
+    @SerialName("pharmacy_location") val pharmacyLocation: String? = null,
+    @SerialName("quantity_total") val quantityTotal: Int? = null,
+    @SerialName("quantity_remaining") val quantityRemaining: Int? = null,
+    @SerialName("next_refill_date") val nextRefillDate: String? = null,
+    @SerialName("refill_reminder_days") val refillReminderDays: Int? = null,
+    @SerialName("start_date") val startDate: String? = null,
+    @SerialName("is_active") val isActive: Boolean? = null,
+    @SerialName("end_date") val endDate: String? = null,
+    val color: String? = null
+)
+
+@Serializable
 data class MarkMedicationRequest(
     val status: String,
     @SerialName("taken_at") val takenAt: String? = null,

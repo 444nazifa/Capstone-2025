@@ -152,7 +152,7 @@ actual suspend fun sendImageToBackend(imageData: ByteArray): String? = withConte
 actual suspend fun searchMedicationsByNDC(ndc: String): com.example.myapplication.data.MedicationSearchResponse? = withContext(Dispatchers.IO) {
     try {
         val client = OkHttpClient()
-        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medication/search?query=$ndc"
+        val url = "${com.example.myapplication.api.ApiConfig.MEDICATION_BACKEND_URL}/api/medication/search/?query=$ndc"
 
         val request = Request.Builder()
             .url(url)

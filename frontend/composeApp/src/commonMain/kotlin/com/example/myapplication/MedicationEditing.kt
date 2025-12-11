@@ -1,0 +1,519 @@
+package com.example.myapplication
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocalPharmacy
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.myapplication.data.UserMedication
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditMedicationScreen(
+    medication: UserMedication,
+    onBack: () -> Unit,
+    onSave: (UserMedication) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // ---------- STATE ----------
+    var currentTab by remember { mutableStateOf(EditMedicationTab.Basic) }
+
+    // Basic
+    var brandName by remember { mutableStateOf(medication.medicationName) }
+    var dosage by remember { mutableStateOf(medication.dosage) }
+    var doctorName by remember { mutableStateOf(medication.doctorName.orEmpty()) }
+    var pharmacyName by remember { mutableStateOf(medication.pharmacyName.orEmpty()) }
+    var notes by remember { mutableStateOf(medication.instructions.orEmpty()) }
+
+    // Schedule
+    var frequency by remember { mutableStateOf(medication.frequency) }
+    // Note: Schedule editing is currently read-only. To modify schedules,
+    // use the dedicated schedule management endpoints through the API.
+    // Full schedule CRUD operations require separate API calls to:
+    // - addSchedule, updateSchedule, deleteSchedule
+    var scheduleTimes by remember {
+        mutableStateOf(
+            medication.schedules?.map { it.scheduledTime } ?: listOf("08:00")
+        )
+    }
+
+    // Refills / inventory-ish
+    var quantityTotal by remember { mutableStateOf(medication.quantityTotal?.toString().orEmpty()) }
+    var quantityRemaining by remember { mutableStateOf(medication.quantityRemaining?.toString().orEmpty()) }
+    var refillReminderDays by remember { mutableStateOf(medication.refillReminderDays?.toString() ?: "7") }
+    var startDate by remember { mutableStateOf(medication.startDate.orEmpty()) }
+
+    val scrollState = rememberScrollState()
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Column {
+                        Text("Edit Medication", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = brandName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            // Build updated medication object
+                            val updated = medication.copy(
+                                medicationName = brandName,
+                                dosage = dosage,
+                                frequency = frequency,
+                                doctorName = doctorName.ifBlank { null },
+                                pharmacyName = pharmacyName.ifBlank { null },
+                                instructions = notes.ifBlank { null },
+                                quantityTotal = quantityTotal.toIntOrNull(),
+                                quantityRemaining = quantityRemaining.toIntOrNull(),
+                                refillReminderDays = refillReminderDays.toIntOrNull(),
+                                startDate = startDate.ifBlank { medication.startDate }
+                                // ⚠️ If you want schedule editing to persist, map `scheduleTimes`
+                                // into your schedule model here and pass it into `copy(schedules = ...)`.
+                            )
+                            onSave(updated)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Save")
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            // ---------- TABS ----------
+            TabRow(
+                selectedTabIndex = currentTab.ordinal,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                EditMedicationTab.values().forEachIndexed { index, tab ->
+                    Tab(
+                        selected = currentTab.ordinal == index,
+                        onClick = { currentTab = tab },
+                        text = { Text(tab.label) }
+                    )
+                }
+            }
+
+            // ---------- CONTENT ----------
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                when (currentTab) {
+                    EditMedicationTab.Basic -> {
+                        BasicInfoCard(
+                            brandName = brandName,
+                            onBrandNameChange = { brandName = it },
+                            dosage = dosage,
+                            onDosageChange = { dosage = it },
+                            doctorName = doctorName,
+                            onDoctorChange = { doctorName = it },
+                            pharmacyName = pharmacyName,
+                            onPharmacyChange = { pharmacyName = it }
+                        )
+                    }
+
+                    EditMedicationTab.Schedule -> {
+                        ScheduleCard(
+                            frequency = frequency,
+                            onFrequencyChange = { frequency = it },
+                            scheduleTimes = scheduleTimes,
+                            onScheduleTimesChange = { scheduleTimes = it },
+                            readOnly = false // Allow frequency edits, but schedule times are display-only
+                        )
+                    }
+
+                    EditMedicationTab.Refills -> {
+                        RefillsCard(
+                            quantityTotal = quantityTotal,
+                            onQuantityTotalChange = { quantityTotal = it },
+                            quantityRemaining = quantityRemaining,
+                            onQuantityRemainingChange = { quantityRemaining = it },
+                            refillReminderDays = refillReminderDays,
+                            onRefillReminderDaysChange = { refillReminderDays = it },
+                            startDate = startDate,
+                            onStartDateChange = { startDate = it }
+                        )
+                    }
+
+                    EditMedicationTab.Notes -> {
+                        NotesCard(
+                            notes = notes,
+                            onNotesChange = { notes = it }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+private enum class EditMedicationTab(val label: String) {
+    Basic("Basic"),
+    Schedule("Schedule"),
+    Refills("Refills"),
+    Notes("Notes")
+}
+
+// Helper function to format time
+private fun formatTime(time: String): String {
+    val parts = time.split(":")
+    if (parts.size >= 2) {
+        val hour = parts[0].toIntOrNull() ?: 0
+        val minute = parts[1]
+        val period = if (hour < 12) "AM" else "PM"
+        val hour12 = when {
+            hour == 0 -> 12
+            hour > 12 -> hour - 12
+            else -> hour
+        }
+        return "$hour12:$minute $period"
+    }
+    return time
+}
+
+// ---------- BASIC TAB ----------
+
+@Composable
+private fun BasicInfoCard(
+    brandName: String,
+    onBrandNameChange: (String) -> Unit,
+    dosage: String,
+    onDosageChange: (String) -> Unit,
+    doctorName: String,
+    onDoctorChange: (String) -> Unit,
+    pharmacyName: String,
+    onPharmacyChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Medication Details",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = brandName,
+                onValueChange = onBrandNameChange,
+                label = { Text("Brand Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = dosage,
+                onValueChange = onDosageChange,
+                label = { Text("Dosage") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = doctorName,
+                    onValueChange = onDoctorChange,
+                    label = { Text("Prescribed By") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Person, contentDescription = null)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                OutlinedTextField(
+                    value = pharmacyName,
+                    onValueChange = onPharmacyChange,
+                    label = { Text("Pharmacy") },
+                    leadingIcon = {
+                        Icon(Icons.Default.LocalPharmacy, contentDescription = null)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+// ---------- SCHEDULE TAB ----------
+
+@Composable
+private fun ScheduleCard(
+    frequency: String,
+    onFrequencyChange: (String) -> Unit,
+    scheduleTimes: List<String>,
+    onScheduleTimesChange: (List<String>) -> Unit,
+    readOnly: Boolean = false
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Dosing Schedule",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Frequency selector (simple chips)
+            Text("Frequency", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val options = listOf(
+                "Every day",
+                "Every other day",
+                "As needed",
+                "Weekly"
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                options.forEach { option ->
+                    FilterChip(
+                        selected = frequency == option,
+                        onClick = { onFrequencyChange(option) },
+                        label = { Text(option, fontSize = 13.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF2E7D32),
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Dosing Times", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Informational note about schedule management
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFFF9E6)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color(0xFFE65100)
+                    )
+                    Column {
+                        Text(
+                            "Current dosing times:",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF6D4C41)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "You can update the frequency above. Schedule times are shown for reference only.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6D4C41),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            scheduleTimes.forEachIndexed { index, time ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFF5F5F5)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = formatTime(time),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF424242)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------- REFILLS TAB ----------
+
+@Composable
+private fun RefillsCard(
+    quantityTotal: String,
+    onQuantityTotalChange: (String) -> Unit,
+    quantityRemaining: String,
+    onQuantityRemainingChange: (String) -> Unit,
+    refillReminderDays: String,
+    onRefillReminderDaysChange: (String) -> Unit,
+    startDate: String,
+    onStartDateChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Refill Information",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = quantityTotal,
+                    onValueChange = { if (it.all(Char::isDigit)) onQuantityTotalChange(it) },
+                    label = { Text("Total Pills") },
+                    modifier = Modifier.weight(1f)
+                )
+
+                OutlinedTextField(
+                    value = quantityRemaining,
+                    onValueChange = { if (it.all(Char::isDigit)) onQuantityRemainingChange(it) },
+                    label = { Text("Pills Remaining") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = refillReminderDays,
+                onValueChange = { if (it.all(Char::isDigit)) onRefillReminderDaysChange(it) },
+                label = { Text("Refill Reminder (days before)") },
+                leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = startDate,
+                onValueChange = onStartDateChange,
+                label = { Text("Date Prescribed (YYYY-MM-DD)") },
+                leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+// ---------- NOTES TAB ----------
+
+@Composable
+private fun NotesCard(
+    notes: String,
+    onNotesChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Personal Notes / Instructions",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = notes,
+                onValueChange = onNotesChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                label = { Text("Notes") },
+                singleLine = false,
+                maxLines = 6
+            )
+        }
+    }
+}

@@ -1,0 +1,338 @@
+Calculating task graph as no cached configuration is available for tasks: clean build
+Type-safe project accessors is an incubating feature.
+> Task :composeApp:preBuild UP-TO-DATE
+> Task :composeApp:preDebugBuild UP-TO-DATE
+> Task :composeApp:preReleaseBuild UP-TO-DATE
+> Task :composeApp:preReleaseUnitTestBuild UP-TO-DATE
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:preDebugUnitTestBuild UP-TO-DATE
+> Task :composeApp:cleanIosSimulatorArm64Test
+> Task :composeApp:cleanAllTests
+> Task :composeApp:clean
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :composeApp:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidDebug NO-SOURCE
+> Task :composeApp:metadataCommonMainProcessResources NO-SOURCE
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain
+> Task :composeApp:generateResourceAccessorsForAndroidDebug NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :composeApp:debugAssetsCopyForAGP NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain UP-TO-DATE
+> Task :composeApp:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :composeApp:generateDebugResValues FROM-CACHE
+> Task :composeApp:processDebugNavigationResources FROM-CACHE
+> Task :composeApp:generateProjectStructureMetadata
+> Task :composeApp:javaPreCompileDebug FROM-CACHE
+> Task :composeApp:desugarDebugFileDependencies FROM-CACHE
+> Task :composeApp:processDebugGoogleServices FROM-CACHE
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:compileDebugNavigationResources FROM-CACHE
+> Task :composeApp:generateActualResourceCollectorsForAndroidMain
+> Task :composeApp:extractDeepLinksDebug FROM-CACHE
+> Task :composeApp:generateDebugResources FROM-CACHE
+> Task :composeApp:writeDebugAppMetadata
+> Task :composeApp:copyDebugComposeResourcesToAndroidAssets
+> Task :composeApp:buildKotlinToolingMetadata
+> Task :composeApp:processDebugMainManifest FROM-CACHE
+> Task :composeApp:mapDebugSourceSetPaths
+> Task :composeApp:convertXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:createDebugCompatibleScreenManifests
+> Task :composeApp:copyNonXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:processDebugManifest FROM-CACHE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidRelease NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidRelease NO-SOURCE
+> Task :composeApp:processDebugManifestForPackage FROM-CACHE
+> Task :composeApp:packageDebugResources FROM-CACHE
+> Task :composeApp:writeDebugSigningConfigVersions
+> Task :composeApp:mergeDebugShaders
+> Task :composeApp:validateSigningDebug
+> Task :composeApp:compileDebugShaders NO-SOURCE
+> Task :composeApp:generateDebugAssets UP-TO-DATE
+> Task :composeApp:createReleaseCompatibleScreenManifests
+> Task :composeApp:generateReleaseResValues FROM-CACHE
+> Task :composeApp:mergeDebugResources FROM-CACHE
+> Task :composeApp:processReleaseGoogleServices FROM-CACHE
+> Task :composeApp:parseDebugLocalResources FROM-CACHE
+> Task :composeApp:javaPreCompileRelease FROM-CACHE
+> Task :composeApp:generateReleaseResources FROM-CACHE
+> Task :composeApp:desugarReleaseFileDependencies
+> Task :composeApp:extractDeepLinksRelease FROM-CACHE
+> Task :composeApp:mapReleaseSourceSetPaths
+> Task :composeApp:packageReleaseResources FROM-CACHE
+> Task :composeApp:processReleaseMainManifest FROM-CACHE
+> Task :composeApp:processReleaseManifest FROM-CACHE
+> Task :composeApp:processReleaseManifestForPackage FROM-CACHE
+> Task :composeApp:copyReleaseComposeResourcesToAndroidAssets
+> Task :composeApp:releaseAssetsCopyForAGP NO-SOURCE
+> Task :composeApp:mergeReleaseStartupProfile
+> Task :composeApp:mergeReleaseResources FROM-CACHE
+> Task :composeApp:convertXmlValueResourcesForAndroidUnitTest NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAndroidUnitTestDebug NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidUnitTestDebug NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidUnitTest NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidUnitTest NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidUnitTest NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAndroidUnitTestRelease NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidUnitTestRelease NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidUnitTestRelease NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidUnitTestRelease NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAppleMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAppleMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAppleMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAppleMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAppleTest NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAppleTest NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAppleTest NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAppleTest NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForCommonTest NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonTest NO-SOURCE
+> Task :composeApp:mergeDebugJniLibFolders
+> Task :composeApp:prepareComposeResourcesTaskForCommonTest NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidUnitTestDebug NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidUnitTestDebug NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForIosArm64Main NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForIosArm64Main NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForCommonTest NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForIosArm64Test NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForIosArm64Test NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForIosArm64Main NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForIosArm64Test NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForIosArm64Main NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForIosMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForIosArm64Test NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForIosMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForIosSimulatorArm64Main NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForIosSimulatorArm64Main NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForIosMain NO-SOURCE
+> Task :composeApp:mergeReleaseJniLibFolders
+> Task :composeApp:checkReleaseAarMetadata
+> Task :composeApp:convertXmlValueResourcesForIosSimulatorArm64Test NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForIosSimulatorArm64Test NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForIosSimulatorArm64Test NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForIosSimulatorArm64Test NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForIosTest NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForIosTest NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForIosMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForIosTest NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForIosTest NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForNativeMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForNativeTest NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForNativeMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForNativeTest NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForNativeTest NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForIosSimulatorArm64Main NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForNativeMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForNativeTest NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForNativeMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForIosSimulatorArm64Main NO-SOURCE
+> Task :composeApp:extractProguardFiles
+> Task :composeApp:writeReleaseSigningConfigVersions
+> Task :composeApp:writeReleaseAppMetadata
+> Task :composeApp:metadataNativeMainProcessResources NO-SOURCE
+> Task :composeApp:metadataAppleMainProcessResources NO-SOURCE
+> Task :composeApp:generateActualResourceCollectorsForIosArm64Main
+> Task :composeApp:extractReleaseVersionControlInfo
+> Task :composeApp:processReleaseNavigationResources FROM-CACHE
+> Task :composeApp:compileReleaseNavigationResources FROM-CACHE
+> Task :composeApp:checkDebugAarMetadata
+> Task :composeApp:parseReleaseLocalResources FROM-CACHE
+> Task :composeApp:generateActualResourceCollectorsForIosSimulatorArm64Main
+> Task :composeApp:mergeReleaseShaders
+> Task :composeApp:compileReleaseShaders NO-SOURCE
+> Task :composeApp:generateReleaseAssets UP-TO-DATE
+> Task :composeApp:mergeReleaseAssets
+> Task :composeApp:mergeDebugAssets
+> Task :composeApp:mergeReleaseNativeLibs
+> Task :composeApp:mergeDebugNativeLibs
+> Task :composeApp:compressDebugAssets FROM-CACHE
+> Task :composeApp:processDebugResources FROM-CACHE
+> Task :composeApp:checkDebugDuplicateClasses
+> Task :composeApp:processReleaseResources FROM-CACHE
+> Task :composeApp:mergeLibDexDebug FROM-CACHE
+> Task :composeApp:checkReleaseDuplicateClasses
+
+> Task :composeApp:stripReleaseDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libimage_processing_util_jni.so. Run with --info option to learn more.
+
+> Task :composeApp:iosArm64ResolveResourcesFromDependencies
+> Task :composeApp:compileDebugKotlinAndroid FROM-CACHE
+> Task :composeApp:compressReleaseAssets
+> Task :composeApp:compileDebugJavaWithJavac NO-SOURCE
+> Task :composeApp:processDebugJavaRes
+> Task :composeApp:collectReleaseDependencies
+> Task :composeApp:transformCommonMainDependenciesMetadata
+> Task :composeApp:optimizeReleaseResources
+> Task :composeApp:transformNativeMainDependenciesMetadata
+> Task :composeApp:transformAppleMainDependenciesMetadata
+> Task :composeApp:transformIosMainDependenciesMetadata
+> Task :composeApp:assembleIosArm64MainResources
+
+> Task :composeApp:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libimage_processing_util_jni.so. Run with --info option to learn more.
+
+> Task :composeApp:iosArm64ResolveSelfResourcesCopyHierarchicalMultiplatformResources
+> Task :composeApp:commonizeNativeDistribution
+> Task :composeApp:iosArm64AggregateResources
+> Task :composeApp:iosSimulatorArm64ResolveResourcesFromDependencies
+> Task :composeApp:assembleIosSimulatorArm64MainResources
+> Task :composeApp:iosArm64ProcessResources
+> Task :composeApp:metadataIosMainProcessResources NO-SOURCE
+> Task :composeApp:assembleIosSimulatorArm64TestResources
+> Task :composeApp:iosSimulatorArm64ResolveSelfResourcesCopyHierarchicalMultiplatformResources
+> Task :composeApp:iosSimulatorArm64AggregateResources
+> Task :composeApp:iosSimulatorArm64ProcessResources
+> Task :composeApp:copyTestComposeResourcesForIosSimulatorArm64
+> Task :composeApp:mergeReleaseArtProfile
+> Task :composeApp:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :composeApp:javaPreCompileReleaseUnitTest FROM-CACHE
+> Task :composeApp:preDebugAndroidTestBuild SKIPPED
+> Task :composeApp:generateDebugAndroidTestResValues FROM-CACHE
+> Task :composeApp:bundleDebugClassesToCompileJar
+> Task :composeApp:sdkReleaseDependencyData
+
+> Task :composeApp:compileCommonMainKotlinMetadata
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:173:53 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:181:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/MedicationEditing.kt:80:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:273:49 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:538:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+
+> Task :composeApp:extractReleaseNativeSymbolTables
+> Task :composeApp:mergeReleaseNativeDebugMetadata NO-SOURCE
+
+> Task :composeApp:compileReleaseKotlinAndroid
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/androidMain/kotlin/com/example/myapplication/ScanMedicationScreen.android.kt:31:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:173:53 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:181:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/MedicationEditing.kt:80:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:273:49 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:538:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/viewmodel/HomeViewModel.kt:232:13 'when' is exhaustive so 'else' is redundant here.
+
+> Task :composeApp:bundleDebugClassesToRuntimeJar
+> Task :composeApp:compileReleaseJavaWithJavac NO-SOURCE
+> Task :composeApp:metadataCommonMainClasses
+> Task :composeApp:allMetadataJar
+> Task :composeApp:generateReleaseLintVitalReportModel
+> Task :composeApp:generateDebugUnitTestLintModel
+> Task :composeApp:processReleaseJavaRes
+> Task :composeApp:mergeExtDexDebug FROM-CACHE
+> Task :composeApp:compileNativeMainKotlinMetadata NO-SOURCE
+> Task :composeApp:metadataNativeMainClasses UP-TO-DATE
+> Task :composeApp:compileAppleMainKotlinMetadata NO-SOURCE
+> Task :composeApp:metadataAppleMainClasses UP-TO-DATE
+> Task :composeApp:mergeDebugJavaResource
+> Task :composeApp:bundleReleaseClassesToRuntimeJar
+> Task :composeApp:mergeReleaseJavaResource
+> Task :composeApp:bundleReleaseClassesToCompileJar
+> Task :composeApp:dexBuilderDebug
+> Task :composeApp:mergeProjectDexDebug FROM-CACHE
+> Task :composeApp:generateDebugLintReportModel
+> Task :composeApp:compileDebugUnitTestKotlinAndroid
+> Task :composeApp:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :composeApp:processDebugUnitTestJavaRes
+> Task :composeApp:compileReleaseUnitTestKotlinAndroid
+> Task :composeApp:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :composeApp:processReleaseUnitTestJavaRes
+> Task :composeApp:packageDebug
+> Task :composeApp:createDebugApkListingFileRedirect
+> Task :composeApp:assembleDebug
+> Task :composeApp:generateDebugAndroidTestLintModel
+> Task :composeApp:dexBuilderRelease
+
+> Task :composeApp:compileIosMainKotlinMetadata
+w: KLIB resolver: The same 'unique_name=annotation_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.annotation-annotation-1.9.1-commonMain-WmoUwA.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.compose.annotation-internal-annotation-1.9.0-commonMain-cgDJDA.klib
+w: KLIB resolver: The same 'unique_name=collection_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.collection-collection-1.5.0-commonMain-j7f1lg.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.compose.collection-internal-collection-1.9.0-commonMain-w7Q_Yw.klib
+w: KLIB resolver: The same 'unique_name=library_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.compose.components-components-resources-1.9.0-commonMain-Iq3oUw.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.compose.components-components-ui-tooling-preview-1.9.0-commonMain-YpxcCA.klib
+w: KLIB resolver: The same 'unique_name=lifecycle-common_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.lifecycle-lifecycle-common-2.9.2-commonMain-2l5nFA.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.androidx.lifecycle-lifecycle-common-2.9.4-commonMain-_EOCYQ.klib
+w: KLIB resolver: The same 'unique_name=lifecycle-runtime_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.lifecycle-lifecycle-runtime-2.9.2-commonMain-IrcNlw.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.androidx.lifecycle-lifecycle-runtime-2.9.4-commonMain-WvMiUA.klib
+w: KLIB resolver: The same 'unique_name=lifecycle-viewmodel-savedstate_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.lifecycle-lifecycle-viewmodel-savedstate-2.9.2-commonMain-KTe1Gw.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.androidx.lifecycle-lifecycle-viewmodel-savedstate-2.9.4-commonMain-V32Hfg.klib
+w: KLIB resolver: The same 'unique_name=lifecycle-viewmodel_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.lifecycle-lifecycle-viewmodel-2.9.2-commonMain-YZugNA.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.androidx.lifecycle-lifecycle-viewmodel-2.9.4-commonMain-o5UeXw.klib
+w: KLIB resolver: The same 'unique_name=runtime_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.compose.runtime-runtime-1.9.0-commonMain-_TGNUg.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.compose.runtime-runtime-1.9.0-commonMain-QgBs-g.klib
+w: KLIB resolver: The same 'unique_name=savedstate_commonMain' found in more than one library: /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/androidx.savedstate-savedstate-1.3.1-commonMain-NwmUsg.klib, /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/kotlinTransformedMetadataLibraries/commonMain/org.jetbrains.androidx.savedstate-savedstate-1.3.4-commonMain-Gx5ULw.klib
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:47:5 'fun <T : UIView> UIKitView(factory: () -> T, modifier: Modifier, update: (T) -> Unit = ..., background: Color = ..., onRelease: (T) -> Unit = ..., onResize: (T, CValue<CGRect>) -> Unit = ..., interactive: Boolean = ..., accessibilityEnabled: Boolean = ...): Unit' is deprecated. This function was deprecated in favor of newer API.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:292:21 This declaration needs opt-in. Its usage should be marked with '@kotlinx.serialization.ExperimentalSerializationApi' or '@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)'
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:321:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.serialization.ExperimentalSerializationApi' or '@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)'
+
+> Task :composeApp:metadataIosMainClasses
+> Task :composeApp:iosArm64MetadataElements
+> Task :composeApp:iosSimulatorArm64MetadataElements
+> Task :composeApp:testReleaseUnitTest
+> Task :composeApp:testDebugUnitTest
+> Task :composeApp:test
+
+> Task :composeApp:compileKotlinIosArm64
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:173:53 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:181:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/MedicationEditing.kt:80:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:273:49 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:538:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/viewmodel/HomeViewModel.kt:232:13 'when' is exhaustive so 'else' is redundant here.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:47:5 'fun <T : UIView> UIKitView(factory: () -> T, modifier: Modifier, update: (T) -> Unit = ..., background: Color = ..., onRelease: (T) -> Unit = ..., onResize: (T, CValue<CGRect>) -> Unit = ..., interactive: Boolean = ..., accessibilityEnabled: Boolean = ...): Unit' is deprecated. This function was deprecated in favor of newer API.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:292:21 This declaration needs opt-in. Its usage should be marked with '@kotlinx.serialization.ExperimentalSerializationApi' or '@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)'
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:321:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.serialization.ExperimentalSerializationApi' or '@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)'
+
+> Task :composeApp:compileKotlinIosSimulatorArm64
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:173:53 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/HomeScreen.kt:181:53 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/MedicationEditing.kt:80:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:273:49 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/ScanMedicationScreen.kt:538:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/commonMain/kotlin/com/example/myapplication/viewmodel/HomeViewModel.kt:232:13 'when' is exhaustive so 'else' is redundant here.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:47:5 'fun <T : UIView> UIKitView(factory: () -> T, modifier: Modifier, update: (T) -> Unit = ..., background: Color = ..., onRelease: (T) -> Unit = ..., onResize: (T, CValue<CGRect>) -> Unit = ..., interactive: Boolean = ..., accessibilityEnabled: Boolean = ...): Unit' is deprecated. This function was deprecated in favor of newer API.
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:292:21 This declaration needs opt-in. Its usage should be marked with '@kotlinx.serialization.ExperimentalSerializationApi' or '@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)'
+w: file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/iosMain/kotlin/com/example/myapplication/ScanMedicationScreen.ios.kt:321:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.serialization.ExperimentalSerializationApi' or '@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)'
+
+> Task :composeApp:iosArm64MainKlibrary
+> Task :composeApp:iosSimulatorArm64MainKlibrary
+> Task :composeApp:mergeExtDexRelease
+> Task :composeApp:compileTestKotlinIosSimulatorArm64
+> Task :composeApp:compileTestKotlinIosArm64
+> Task :composeApp:lintAnalyzeDebugAndroidTest
+> Task :composeApp:lintAnalyzeDebugUnitTest
+> Task :composeApp:lintVitalAnalyzeRelease
+> Task :composeApp:lintVitalReportRelease SKIPPED
+> Task :composeApp:lintVitalRelease SKIPPED
+> Task :composeApp:lintAnalyzeDebug
+> Task :composeApp:linkDebugTestIosSimulatorArm64
+> Task :composeApp:mergeReleaseGlobalSynthetics
+> Task :composeApp:linkDebugFrameworkIosArm64
+> Task :composeApp:linkDebugFrameworkIosSimulatorArm64
+
+> Task :composeApp:lintReportDebug
+Wrote HTML report to file:///Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/reports/lint-results-debug.html
+Lint found 2 errors and 43 warnings. First failure:
+/Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/androidMain/AndroidManifest.xml:27: Error: http(s) scheme is missing, but is required for Android App Links [AppLinkUrlError]
+            <intent-filter android:autoVerify="true">
+             ~~~~~~~~~~~~~
+
+
+> Task :composeApp:lintDebug FAILED
+Lint found 2 errors, 43 warnings. First failure:
+
+/Users/rem/projects/python/qr-code-reader/frontend/composeApp/src/androidMain/AndroidManifest.xml:27: Error: http(s) scheme is missing, but is required for Android App Links [AppLinkUrlError]
+            <intent-filter android:autoVerify="true">
+             ~~~~~~~~~~~~~
+
+The full lint text report is located at:
+  /Users/rem/projects/python/qr-code-reader/frontend/composeApp/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
+
+> Task :composeApp:linkReleaseFrameworkIosArm64
+> Task :composeApp:linkReleaseFrameworkIosSimulatorArm64
+
+> Task :composeApp:linkDebugFrameworkIosSimulatorArm64
+w: Cannot infer a bundle ID from packages of source files and exported dependencies, use the bundle name instead: ComposeApp. Please specify the bundle ID explicitly using the -Xbinary=bundleId=<id> compiler flag.
+
+> Task :composeApp:linkDebugFrameworkIosArm64
+w: Cannot infer a bundle ID from packages of source files and exported dependencies, use the bundle name instead: ComposeApp. Please specify the bundle ID explicitly using the -Xbinary=bundleId=<id> compiler flag.
+
+> Task :composeApp:iosSimulatorArm64Test
+Timed out waiting for finished message from client socket connection from /127.0.0.1:55473 to /127.0.0.1:56278. Discarding connection.
+

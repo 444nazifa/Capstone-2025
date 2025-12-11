@@ -106,7 +106,7 @@ class MedicationApiService private constructor(
     suspend fun updateMedication(
         token: String,
         medicationId: String,
-        updates: Map<String, Any>
+        updates: UpdateMedicationRequest
     ): Result<UserMedication> {
         return try {
             val response = client.put("$baseUrl/api/medications/user/$medicationId") {

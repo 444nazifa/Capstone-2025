@@ -136,6 +136,7 @@ export const updateUserMedicationSchema = Joi.object({
   quantity_remaining: Joi.number().integer().min(0).optional(),
   next_refill_date: Joi.date().iso().optional().allow(null),
   refill_reminder_days: Joi.number().integer().min(1).max(90).optional(),
+  start_date: Joi.date().iso().optional().allow(null),
   is_active: Joi.boolean().optional(),
   end_date: Joi.date().iso().optional().allow(null),
   color: Joi.string().pattern(/^#[0-9A-Fa-f]{6}$/).optional()
